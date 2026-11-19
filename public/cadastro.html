@@ -55,6 +55,9 @@
           <option value="">Selecione sua agência</option>
         </select>
 
+        <label for="nome_input">Nome do agente</label>
+        <input id="nome_input" type="text" maxlength="45" placeholder="Seu nome" autocomplete="name" required />
+
         <label for="email_input">E-mail</label>
         <input id="email_input" type="email" maxlength="45" placeholder="seuemail@agencia.com" autocomplete="email" required />
 
@@ -83,12 +86,13 @@
 <script>
 
   function cadastrar() {
+    var nomeVar = nome_input.value.trim();
     var emailVar = email_input.value.trim();
     var senhaVar = senha_input.value;
     var confirmacaoSenhaVar = confirmacao_senha_input.value;
     var agenciaVar = agencia_input.value;
 
-    if (!emailVar || !senhaVar || !confirmacaoSenhaVar || !agenciaVar) {
+    if (!nomeVar || !emailVar || !senhaVar || !confirmacaoSenhaVar || !agenciaVar) {
       mostrarErro("Preencha todos os campos.");
       return false;
     }
@@ -105,6 +109,7 @@
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
+        nome: nomeVar,
         emailServer: emailVar,
         senhaServer: senhaVar,
         idAgenciaServer: agenciaVar

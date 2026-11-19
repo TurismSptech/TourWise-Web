@@ -22,6 +22,8 @@ var medidasRouter = require("./src/routes/medidas");
 var aquariosRouter = require("./src/routes/aquarios");
 var empresasRouter = require("./src/routes/empresas");
 var mailerRouter = require("./src/routes/mailer");
+var hospedagensRouter = require("./src/routes/hospedagens");
+var pesquisasRouter = require("./src/routes/pesquisas");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -36,6 +38,8 @@ app.use("/medidas", medidasRouter);
 app.use("/aquarios", aquariosRouter);
 app.use("/empresas", empresasRouter);
 app.use("/mailer", mailerRouter);
+app.use("/hospedagens", hospedagensRouter);
+app.use("/pesquisas", pesquisasRouter);
 
 app.listen(PORTA_APP, function () {
     console.log(`

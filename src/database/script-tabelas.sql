@@ -11,6 +11,7 @@ senha VARCHAR(45)
 
 CREATE TABLE usuario (
 id_usuario INT PRIMARY KEY AUTO_INCREMENT,
+nome VARCHAR(45) NOT NULL,
 email VARCHAR(45) UNIQUE,
 senha VARCHAR(45) NOT NULL,
 fk_agencia INT,
@@ -341,4 +342,3 @@ VALUES
 (4, 3, '91%', 1),
 (3, 4, '87%', 1);
 */
-
