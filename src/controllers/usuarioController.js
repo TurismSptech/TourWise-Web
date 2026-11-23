@@ -1,5 +1,7 @@
 var usuarioModel = require("../models/usuarioModel");
 var enviarErroBanco = require("../utils/responses").enviarErroBanco;
+var criarSessao = require("../auth/sessions").criarSessao;
+var pagination = require("../utils/pagination");
 
 function idValido(valor) {
     return /^\d+$/.test(String(valor)) && Number(valor) > 0;
@@ -37,9 +39,20 @@ function validarAgente(body, exigirSenha) {
     };
 }
 
+function dadosDoGestor(req) {
+    var dados = Object.assign({}, req.body);
+    delete dados.agenciaId;
+    delete dados.fk_agencia;
+    delete dados.idAgenciaServer;
+    delete dados.fkAgenciaServer;
+    dados.agenciaId = req.usuario.agenciaId;
+    return dados;
+}
+
 function autenticar(req, res) {
-    var email = req.body.emailServer || req.body.email;
-    var senha = req.body.senhaServer || req.body.senha;
+    var body = req.body || {};
+    var email = body.emailServer || body.email;
+    var senha = body.senhaServer || body.senha;
 
     if (typeof email !== "string" || !email.trim()) {
         res.status(400).send("Seu email está undefined!");
@@ -50,7 +63,10 @@ function autenticar(req, res) {
         usuarioModel.autenticar(email, senha)
             .then(function (resultadoAutenticar) {
                 if (resultadoAutenticar.length === 1) {
-                    res.json(resultadoAutenticar[0]);
+                    var usuario = resultadoAutenticar[0];
+                    usuario.cargo = usuario.cargo === "administrador" ? "adm" : usuario.cargo;
+                    usuario.token = criarSessao(usuario);
+                    res.json(usuario);
                 } else if (resultadoAutenticar.length === 0) {
                     res.status(403).send("Email e/ou senha inválido(s)");
                 } else {
@@ -65,20 +81,23 @@ function autenticar(req, res) {
 }
 
 function cadastrar(req, res) {
-    var validacao = validarAgente(req.body, true);
+    var dadosAgente = dadosDoGestor(req);
+    var validacao = validarAgente(dadosAgente, true);
     if (validacao.erro) {
         res.status(400).json({ mensagem: validacao.erro });
         return;
     }
 
     var agente = validacao.valor;
-    usuarioModel.cadastrar(agente.nome, agente.email, agente.senha, agente.agenciaId)
+    var agenciaId = req.usuario.agenciaId;
+
+    usuarioModel.cadastrarAgente(agente.nome, agente.email, agente.senha, agenciaId)
         .then(function (id) {
             res.status(201).json({
                 id: id,
                 nome: agente.nome,
                 email: agente.email,
-                agenciaId: agente.agenciaId,
+                agenciaId: agenciaId,
                 cargo: "Agente"
             });
         })
@@ -87,24 +106,21 @@ function cadastrar(req, res) {
         });
 }
 
-function listarAgencias(req, res) {
-    usuarioModel.listarAgencias()
-        .then(function (resultado) {
-            res.json(resultado);
-        })
-        .catch(function (erro) {
-            enviarErroBanco(res, erro, "listar as agências");
-        });
-}
-
 function listarAgentes(req, res) {
-    var agenciaId = req.query.agenciaId;
-    if (agenciaId !== undefined && !idValido(agenciaId)) {
+    var agenciaId = req.usuario.agenciaId || req.query.agenciaId;
+    if (!agenciaId || !idValido(agenciaId)) {
         res.status(400).json({ mensagem: "Informe um id de agência válido." });
         return;
     }
 
-    usuarioModel.listarAgentes(agenciaId ? Number(agenciaId) : null)
+    var paginacao = pagination.parseQuery(req, res);
+    if (!paginacao) return;
+
+    usuarioModel.listarAgentesPaginado(
+        Number(agenciaId),
+        paginacao.page,
+        paginacao.pageSize
+    )
         .then(function (resultado) {
             res.status(200).json(resultado);
         })
@@ -125,6 +141,10 @@ function buscarAgentePorId(req, res) {
                 res.status(404).json({ mensagem: "Agente não encontrado." });
                 return;
             }
+            if (Number(resultado[0].agenciaId) !== Number(req.usuario.agenciaId)) {
+                res.status(404).json({ mensagem: "Agente não encontrado." });
+                return;
+            }
             res.status(200).json(resultado[0]);
         })
         .catch(function (erro) {
@@ -138,18 +158,33 @@ function atualizarAgente(req, res) {
         return;
     }
 
-    var validacao = validarAgente(req.body, false);
+    var dadosAgente = dadosDoGestor(req);
+    var validacao = validarAgente(dadosAgente, false);
     if (validacao.erro) {
         res.status(400).json({ mensagem: validacao.erro });
         return;
     }
 
     var agente = validacao.valor;
-    usuarioModel.atualizarAgente(Number(req.params.id), agente)
-        .then(function () {
+    usuarioModel.buscarAgentePorId(Number(req.params.id))
+        .then(function (existentes) {
+            if (!existentes.length ||
+                Number(existentes[0].agenciaId) !== Number(req.usuario.agenciaId)) {
+                res.status(404).json({ mensagem: "Agente não encontrado." });
+                return null;
+            }
+            return usuarioModel.atualizarAgente(Number(req.params.id), agente);
+        })
+        .then(function (atualizado) {
+            if (atualizado === null) {
+                return null;
+            }
             return usuarioModel.buscarAgentePorId(Number(req.params.id));
         })
         .then(function (resultado) {
+            if (resultado === null) {
+                return;
+            }
             if (resultado.length === 0) {
                 res.status(404).json({ mensagem: "Agente não encontrado." });
                 return;
@@ -167,8 +202,22 @@ function excluirAgente(req, res) {
         return;
     }
 
-    usuarioModel.excluirAgente(Number(req.params.id))
+    usuarioModel.buscarAgentePorId(Number(req.params.id))
+        .then(function (agentes) {
+            if (!agentes.length ||
+                Number(agentes[0].agenciaId) !== Number(req.usuario.agenciaId)) {
+                res.status(404).json({ mensagem: "Agente não encontrado." });
+                return null;
+            }
+            return usuarioModel.excluirAgente(
+                Number(req.params.id),
+                Number(req.usuario.agenciaId)
+            );
+        })
         .then(function (resultado) {
+            if (!resultado) {
+                return;
+            }
             if (resultado.affectedRows === 0) {
                 res.status(404).json({ mensagem: "Agente não encontrado." });
                 return;
@@ -183,7 +232,6 @@ function excluirAgente(req, res) {
 module.exports = {
     autenticar,
     cadastrar,
-    listarAgencias,
     listarAgentes,
     buscarAgentePorId,
     atualizarAgente,

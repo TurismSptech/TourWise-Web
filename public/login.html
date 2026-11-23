@@ -34,36 +34,35 @@
             <a href="index.html#sobre-nos">Sobre nós</a>
             <a href="index.html#como-funciona">Como funciona</a>
             <a href="index.html#contato">Contato</a>
-            <a class="auth-mobile-action" href="cadastro.html">Cadastro</a>
         </div>
-        <a class="auth-nav-action" href="cadastro.html">Cadastro</a>
+        <a class="auth-nav-action" href="#login-form">Login</a>
     </nav>
 
     <main class="auth-main">
         <section class="auth-panel" aria-labelledby="auth-title">
             <p class="auth-eyebrow">Bem-vindo ao TourWise</p>
-            <h1 id="auth-title">Login do agente</h1>
-            <p class="auth-description">Acesse sua conta para acompanhar informações e oportunidades do setor turístico.</p>
+            <h1 id="auth-title">Entrar no TourWise</h1>
+            <p class="auth-description">Acesse sua área de administrador, gestor de agência ou agente.</p>
 
             <div class="auth-message" id="cardErro" role="status" aria-live="polite">
                 <span id="mensagem_erro"></span>
             </div>
 
-            <form class="auth-form" onsubmit="return entrar()">
+            <form class="auth-form" id="login-form" onsubmit="return entrar()">
                 <label for="email_input">E-mail</label>
                 <input id="email_input" type="email" maxlength="45" placeholder="seuemail@agencia.com" autocomplete="username" required>
 
                 <label for="senha_input">Senha</label>
                 <input id="senha_input" type="password" maxlength="45" placeholder="Digite sua senha" autocomplete="current-password" required>
 
-                <button class="auth-submit" type="submit">Entrar como agente</button>
+                <button class="auth-submit" type="submit">Entrar</button>
             </form>
 
             <div id="div_aguardar" class="auth-loading" aria-live="polite">
                 <img src="./assets/circle-loading.gif" id="loading-gif" alt="Carregando">
             </div>
             <div id="div_erros_login"></div>
-            <p class="auth-switch">Ainda não tem acesso? <a href="cadastro.html">Cadastre sua conta</a></p>
+            <p class="auth-switch">A conta de agente é criada pelo gestor da agência. Gestores recebem acesso pelo administrador.</p>
         </section>
     </main>
 
@@ -75,7 +74,7 @@
     function entrar() {
         aguardar();
 
-        var emailVar = email_input.value;
+        var emailVar = email_input.value.trim();
         var senhaVar = senha_input.value;
 
         if (emailVar == "" || senhaVar == "") {
@@ -98,16 +97,25 @@
             if (resposta.ok) {
                 resposta.json().then(json => {
                     sessionStorage.EMAIL_USUARIO = json.email;
-                    sessionStorage.NOME_USUARIO = json.email;
+                    sessionStorage.NOME_USUARIO = json.nome;
                     sessionStorage.ID_USUARIO = json.id;
                     sessionStorage.ID_AGENCIA = json.agenciaId;
                     sessionStorage.CARGO_USUARIO = json.cargo;
+                    sessionStorage.SESSION_TOKEN = json.token;
+                    sessionStorage.NOME_AGENCIA = json.agencia || "";
 
                     setTimeout(function () {
-                        if(sessionStorage.CARGO_USUARIO == "Agente"){
-                            window.location = "./dashboard/dashboard.html";
-                        } else if(sessionStorage.CARGO_USUARIO == "adm"){
-                            window.location = "teste.html";
+                        if (json.cargo === "agente") {
+                            window.location = "./agente.html";
+                        } else if (json.cargo === "gestor") {
+                            window.location = "./gestor.html";
+                        } else if (json.cargo === "adm") {
+                            window.location = "./administrador.html";
+                        } else {
+                            sessionStorage.clear();
+                            cardErro.style.display = "block";
+                            mensagem_erro.textContent = "Seu perfil não tem uma área configurada.";
+                            finalizarAguardar();
                         }
                     }, 1000); // apenas para exibir o loading
 

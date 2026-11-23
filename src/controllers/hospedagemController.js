@@ -1,5 +1,6 @@
 var hospedagemModel = require("../models/hospedagemModel");
 var enviarErroBanco = require("../utils/responses").enviarErroBanco;
+var pagination = require("../utils/pagination");
 
 function idValido(valor) {
     return /^\d+$/.test(String(valor)) && Number(valor) > 0;
@@ -102,8 +103,7 @@ function validarHospedagem(body) {
         ["endereco", "endereco", 300, "endereço"],
         ["website", "website", 150, "website"],
         ["porte", "porte", 60, "porte"],
-        ["dt_abertura", "dataAbertura", 10, "data de abertura"],
-        ["validade_certificado", "validadeCertificado", 19, "validade do certificado"]
+        ["dt_abertura", "dataAbertura", 10, "data de abertura"]
     ];
     var opcionais = {};
     for (var j = 0; j < textos.length; j++) {
@@ -132,7 +132,6 @@ function validarHospedagem(body) {
             dataAbertura: opcionais.dataAbertura,
             website: opcionais.website,
             porte: opcionais.porte,
-            validadeCertificado: opcionais.validadeCertificado,
             endereco: opcionais.endereco,
             municipio: municipio.trim(),
             uf: uf.trim().toUpperCase()
@@ -143,20 +142,32 @@ function validarHospedagem(body) {
 function listar(req, res) {
     var busca = req.query.busca;
     var municipio = req.query.municipio;
+    var tipoHospedagem = req.query.tipoHospedagem;
     if ((busca !== undefined && typeof busca !== "string") ||
-        (municipio !== undefined && typeof municipio !== "string")) {
-        res.status(400).json({ mensagem: "Os filtros busca e municipio devem ser textos." });
+        (municipio !== undefined && typeof municipio !== "string") ||
+        (tipoHospedagem !== undefined && typeof tipoHospedagem !== "string")) {
+        res.status(400).json({ mensagem: "Os filtros busca, municipio e tipoHospedagem devem ser textos." });
         return;
     }
 
-    hospedagemModel.listar({
+    var paginacao = pagination.parseQuery(req, res);
+    if (!paginacao) return;
+
+    hospedagemModel.listarPaginado({
         busca: busca ? busca.trim() : "",
-        municipio: municipio ? municipio.trim() : ""
-    }).then(function (resultado) {
+        municipio: municipio ? municipio.trim() : "",
+        tipoHospedagem: tipoHospedagem ? tipoHospedagem.trim() : ""
+    }, paginacao.page, paginacao.pageSize).then(function (resultado) {
         res.status(200).json(resultado);
     }).catch(function (erro) {
         enviarErroBanco(res, erro, "listar as hospedagens");
     });
+}
+
+function listarTipos(req, res) {
+    hospedagemModel.listarTipos()
+        .then(function (resultado) { res.status(200).json(resultado); })
+        .catch(function (erro) { enviarErroBanco(res, erro, "listar os tipos de hospedagem"); });
 }
 
 function buscarPorId(req, res) {
@@ -244,4 +255,4 @@ function excluir(req, res) {
         });
 }
 
-module.exports = { listar, buscarPorId, criar, atualizar, excluir };
+module.exports = { listar, listarTipos, buscarPorId, criar, atualizar, excluir };

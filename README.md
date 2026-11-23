@@ -1,71 +1,72 @@
-# TourWise - API
+# TourWise
 
-API Node.js/Express com persistência MySQL para agentes, hospedagens e pesquisas de clientes.
+Aplicação de turismo com três perfis: Administrador (`adm`), Gestor (`Gestor`) e
+Agente (`Agente`).
 
-## Configuração do banco
+## Banco de dados
 
-Crie o banco e as tabelas executando `src/database/script-tabelas.sql`. Para bancos
-criados antes da adição do nome do agente, execute esta migração uma única vez:
+`src/database/script-tabelas.sql` cria o esquema baseado em `empresa`, `usuario` e
+`tipo_usuario`. O fluxo precisa de `usuario.nome` para identificar as pessoas e de
+`localizacao.fk_hospedagem` para relacionar a cidade ao hotel; ambos foram incluídos
+no script. `tipo_usuario.tipo_usuario` é único para permitir vínculos confiáveis.
+Em instalação nova, execute o script completo uma vez.
 
-```sql
-ALTER TABLE usuario ADD COLUMN nome VARCHAR(45) NULL;
-UPDATE usuario
-SET nome = COALESCE(
-    NULLIF(LEFT(SUBSTRING_INDEX(email, '@', 1), 45), ''),
-    CONCAT('Agente ', id_usuario)
-);
-ALTER TABLE usuario MODIFY nome VARCHAR(45) NOT NULL;
-```
+Os registros de demonstração devem ser criados manualmente usando os tipos
+`adm`, `Gestor` e `Agente`. Um usuário Administrador tem `fk_empresa = NULL`; Gestor
+e Agente devem referenciar a empresa correspondente em `fk_empresa`. Não mantenha
+senhas de teste neste repositório.
 
-Configure as variáveis de ambiente do projeto e inicie com `npm run dev` (desenvolvimento)
-ou `npm start`.
+As senhas seguem o formato atual do projeto e são armazenadas em texto simples;
+isso é adequado apenas para ambiente acadêmico/local, não para produção.
 
-## CRUDs
+O banco local atualmente configurado deve ter esse esquema antes que o login e as
+telas novas funcionem. Este repositório não executa migração automática nem altera
+os dados de nenhum banco.
 
-Os endpoints recebem e retornam JSON. As consultas aceitam parâmetros preparados.
+## Fluxo e telas
 
-### Agentes (`/usuarios`)
+- **Administrador:** `public/administrador.html`; acompanha KPIs e gerencia empresas
+  (criando junto o acesso do Gestor), administradores e hospedagens.
+- **Gestor:** `public/gestor.html`; lista, cadastra, atualiza e exclui Agentes da
+  própria empresa.
+- **Agente:** `public/agente.html`; navega e filtra o catálogo de hospedagens e gera
+  recomendações com base nos dados transitórios do cliente. É possível selecionar
+  uma hospedagem específica ou comparar com todas; os dados do cliente não são persistidos.
 
-| Método | Endpoint | Ação |
-|---|---|---|
-| GET | `/usuarios?agenciaId=1` | Lista agentes, opcionalmente filtrando por agência |
-| GET | `/usuarios/:id` | Busca um agente |
-| POST | `/usuarios` | Cadastra agente e seu vínculo de função |
-| PUT | `/usuarios/:id` | Atualiza nome, email, agência e, opcionalmente, senha |
-| DELETE | `/usuarios/:id` | Exclui agente |
+A compatibilidade considera destino (35%), tipo de hospedagem (15%), capacidade
+(20%), acessibilidade (20%) e idioma (10%). Critérios opcionais ou sem informação
+disponível no cadastro do hotel não são incluídos no denominador.
 
-O cadastro aceita `nome`, `email`, `senha` e `agenciaId`. A rota legada
-`POST /usuarios/cadastrar` continua aceitando `emailServer`, `senhaServer` e
-`idAgenciaServer`.
-Na atualização use `nome`, `email`, `fk_agencia` e, se necessário, `senha`.
-O endpoint `POST /usuarios/autenticar` e `GET /usuarios/agencias` continuam disponíveis.
+## API
 
-### Hospedagens (`/hospedagens`)
+O login é `POST /usuarios/autenticar`. Envie o token de resposta nas demais
+requisições como `Authorization: Bearer <token>`. Sessões expiram após oito horas e
+são mantidas em memória; reiniciar o servidor encerra as sessões.
 
-| Método | Endpoint | Ação |
-|---|---|---|
-| GET | `/hospedagens?busca=hotel&municipio=Recife` | Lista e filtra hospedagens |
-| GET | `/hospedagens/:id` | Busca uma hospedagem com localização |
-| POST | `/hospedagens` | Cadastra hospedagem e localização |
-| PUT | `/hospedagens/:id` | Atualiza hospedagem e localização |
-| DELETE | `/hospedagens/:id` | Exclui hospedagem e registros dependentes |
+| Perfil | Rotas |
+|---|---|
+| Público | `POST /usuarios/autenticar` |
+| Autenticado | `GET /usuarios/sessao`, `POST /usuarios/sair` |
+| Administrador | CRUD `/agencias`, `/administradores` e `/hospedagens` |
+| Gestor | CRUD `/usuarios` (limitado à empresa da sessão) |
+| Agente | `GET /hospedagens`, `GET /hospedagens/:id`, `POST /comparacoes` |
 
-Nome, tipo de hospedagem, município e UF são obrigatórios. Os demais campos seguem
-as colunas da tabela `hospedagem` e podem ser enviados em snake_case ou camelCase.
-Por exemplo: `nome_fantasia`, `tipo_hospedagem`, `municipio`, `uf`, `cnpj`,
-`email_comercial`, `uni_habit`, `leitos`, `uni_habit_acess`, `leito_acess`,
-`dt_abertura`, `website`, `porte`, `validade_certificado` e `endereco`.
+Em `POST /comparacoes`, `hospedagemId` é opcional: sem ele, o sistema classifica
+todas as hospedagens; com ele, gera a recomendação para a hospedagem selecionada.
+Os dados do cliente são transitórios e não são gravados. A análise percorre os
+hotéis em lotes no servidor e retorna até dez recomendações por página.
 
-### Pesquisas de clientes (`/pesquisas`)
+Cada CRUD oferece `GET /`, `GET /:id`, `POST /`, `PUT /:id` e `DELETE /:id`.
+As rotas validam sessão e perfil no servidor. As listagens de hospedagens,
+agências, administradores e agentes usam `?page=1&limit=10`; o limite máximo por
+requisição é dez registros. A resposta da listagem contém `items` e os metadados
+`pagination` (`page`, `pageSize`, `total` e `totalPages`). A busca do catálogo de
+hospedagens aplica filtros no banco antes de paginar.
 
-| Método | Endpoint | Ação |
-|---|---|---|
-| GET | `/pesquisas?usuarioId=1` | Lista pesquisas, opcionalmente por agente |
-| GET | `/pesquisas/:id` | Busca uma pesquisa |
-| POST | `/pesquisas` | Cadastra pesquisa de cliente |
-| PUT | `/pesquisas/:id` | Atualiza pesquisa |
-| DELETE | `/pesquisas/:id` | Exclui pesquisa e recomendações relacionadas |
+## Executar
 
-O corpo recebe `nome_cliente`, `preferencia_lugar`, `quantidade_pessoas`,
-`precisa_acessibilidade` (booleano ou 0/1), `idioma`, `dt_viagem` (AAAA-MM-DD)
-e `fk_usuario`.
+Configure as variáveis de ambiente em `.env.dev` e inicie com `npm run dev` ou
+`npm start`.
+
+No PowerShell do Windows, se a política de execução bloquear `npm.ps1`, use
+`npm.cmd run dev` ou `npm.cmd start`.

@@ -2,10 +2,19 @@ var express = require("express");
 var router = express.Router();
 
 var usuarioController = require("../controllers/usuarioController");
+var sessoes = require("../auth/sessions");
 
-router.get("/agencias", function (req, res) {
-    usuarioController.listarAgencias(req, res);
+router.post("/autenticar", function (req, res) {
+    usuarioController.autenticar(req, res);
 });
+
+router.get("/sessao", sessoes.autenticar, function (req, res) {
+    res.status(200).json(req.usuario);
+});
+
+router.post("/sair", sessoes.autenticar, sessoes.encerrar);
+
+router.use(sessoes.autenticar, sessoes.exigirPerfil("gestor"));
 
 router.get("/", function (req, res) {
     usuarioController.listarAgentes(req, res);
@@ -17,10 +26,6 @@ router.post("/", function (req, res) {
 
 router.post("/cadastrar", function (req, res) {
     usuarioController.cadastrar(req, res);
-})
-
-router.post("/autenticar", function (req, res) {
-    usuarioController.autenticar(req, res);
 });
 
 router.get("/:id", function (req, res) {

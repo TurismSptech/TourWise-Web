@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2d180e">
+  <title>TourWise | Área do agente</title>
+  <link rel="stylesheet" href="css/portal.css">
+  <script src="js/portal.js" defer></script>
+</head>
+<body class="agent-body" data-role="agente" data-page="agente">
+  <header class="portal-top">
+    <a class="portal-logo" href="agente.html"><span>Tour</span>Wise</a>
+    <div class="portal-user">
+      <p><strong data-user-name></strong><span data-agency-name></span></p>
+      <button class="portal-button secondary" data-logout type="button">Sair</button>
+    </div>
+  </header>
+
+  <div class="agent-layout">
+    <aside class="agent-sidebar" aria-label="Navegação do agente">
+      <div class="agent-profile">
+        <span class="agent-avatar" aria-hidden="true">TW</span>
+        <div>
+          <strong data-user-name></strong>
+          <span>Agente de viagens</span>
+        </div>
+      </div>
+      <p class="agent-nav-label">MENU PRINCIPAL</p>
+      <nav class="agent-nav">
+        <a href="#hospedagens" data-agent-nav="hospedagens" aria-current="page">
+          <span class="agent-nav-icon" aria-hidden="true">01</span>
+          Hospedagens
+        </a>
+        <a href="#geracao-recomendacoes" data-agent-nav="geracao-recomendacoes">
+          <span class="agent-nav-icon" aria-hidden="true">02</span>
+          Geração de recomendações
+        </a>
+      </nav>
+      <div class="agent-sidebar-note">
+        <span>TOURWISE</span>
+        <p>Encontre hospedagens que combinam com cada viajante.</p>
+      </div>
+    </aside>
+
+    <main class="agent-main">
+      <section class="portal-wrap agent-view" id="hospedagens" data-agent-view="hospedagens">
+        <div class="portal-heading">
+          <p class="portal-eyebrow">EXPLORE A REDE TOURWISE</p>
+          <h1>Encontre sua próxima hospedagem</h1>
+          <p>Pesquise, descubra detalhes e encontre a opção certa para o seu cliente.</p>
+        </div>
+        <section class="portal-panel portal-discovery">
+          <div class="portal-search-row">
+            <label class="portal-search-box" for="hotel-search">
+              <span aria-hidden="true">⌕</span>
+              <input id="hotel-search" type="search" placeholder="Buscar por hotel, tipo ou cidade" autocomplete="off">
+            </label>
+            <button class="portal-button secondary portal-filter-button" id="hotel-filter-toggle"
+              type="button" aria-expanded="false" aria-controls="hotel-filters">
+              <span aria-hidden="true">☷</span> Filtros
+            </button>
+          </div>
+          <div class="portal-form portal-filter-panel" id="hotel-filters" hidden>
+            <div class="portal-field">
+              <label for="hotel-type-filter">Tipo de hospedagem</label>
+              <select id="hotel-type-filter"><option value="">Todos os tipos</option></select>
+            </div>
+            <div class="portal-field">
+              <label for="hotel-city-filter">Município</label>
+              <input id="hotel-city-filter" type="search" placeholder="Ex.: São Paulo">
+            </div>
+          </div>
+          <div class="portal-section-heading">
+            <div>
+              <p class="portal-eyebrow">CATÁLOGO</p>
+              <h2>Hospedagens disponíveis</h2>
+            </div>
+            <p class="portal-result-count" id="hotel-count" aria-live="polite"></p>
+          </div>
+          <p class="portal-message" id="hotel-message" role="status"></p>
+          <div class="portal-hotel-grid" id="agent-hotel-list"></div>
+          <nav class="portal-pagination" id="agent-hotel-pagination" aria-label="Paginação das hospedagens"></nav>
+        </section>
+      </section>
+
+      <section class="portal-wrap agent-view" id="geracao-recomendacoes"
+        data-agent-view="geracao-recomendacoes" hidden>
+        <div class="portal-heading">
+          <p class="portal-eyebrow">RECOMENDAÇÃO PERSONALIZADA</p>
+          <h1>Geração de recomendações</h1>
+          <p>Conte o que seu cliente procura e descubra as hospedagens mais compatíveis.</p>
+        </div>
+        <section class="portal-panel recommendation-panel">
+          <div class="portal-section-heading">
+            <div>
+              <p class="portal-eyebrow">PERFIL DO VIAJANTE</p>
+              <h2>Preferências do cliente</h2>
+            </div>
+            <span class="portal-step">01 <span>/ 02</span></span>
+          </div>
+          <p class="portal-note">As informações do cliente são usadas somente para gerar estas recomendações e não são salvas.</p>
+          <form class="portal-form recommendation-form" id="compare-form">
+            <div class="portal-field">
+              <label for="client-name">Nome do cliente <span>(opcional)</span></label>
+              <input id="client-name" name="nomeCliente" maxlength="100" placeholder="Ex.: Ana Souza">
+            </div>
+            <div class="portal-field">
+              <label for="client-destination">Destino</label>
+              <input id="client-destination" name="destino" maxlength="100" placeholder="Cidade desejada" required>
+            </div>
+            <div class="portal-field">
+              <label for="recommendation-hotel">Hospedagem</label>
+              <select id="recommendation-hotel" name="hospedagemId">
+                <option value="">Recomendar entre todas</option>
+              </select>
+            </div>
+            <div class="portal-field">
+              <label for="client-type">Tipo de hospedagem <span>(opcional)</span></label>
+              <select id="client-type" name="tipoHospedagem">
+                <option value="">Qualquer tipo</option>
+              </select>
+            </div>
+            <div class="portal-field">
+              <label for="client-people">Quantidade de pessoas</label>
+              <input id="client-people" name="quantidadePessoas" type="number" min="1" placeholder="Ex.: 2" required>
+            </div>
+            <div class="portal-field">
+              <label for="client-accessibility">Precisa de acessibilidade?</label>
+              <select id="client-accessibility" name="precisaAcessibilidade" required>
+                <option value="">Selecione</option>
+                <option value="true">Sim</option>
+                <option value="false">Não</option>
+              </select>
+            </div>
+            <div class="portal-field">
+              <label for="client-language">Idioma <span>(opcional)</span></label>
+              <input id="client-language" name="idioma" maxlength="45" placeholder="Ex.: Inglês">
+            </div>
+            <div class="recommendation-submit">
+              <span>Você pode alterar os critérios e gerar novas recomendações quando quiser.</span>
+              <button class="portal-button" type="submit">Gerar recomendações</button>
+            </div>
+          </form>
+          <p class="portal-message" id="compare-message" role="status"></p>
+        </section>
+
+        <section class="portal-panel recommendation-report" aria-labelledby="recommendation-report-title">
+          <div class="portal-section-heading">
+            <div>
+              <p class="portal-eyebrow">RESULTADO DA ANÁLISE</p>
+              <h2 id="recommendation-report-title">Relatório de compatibilidade</h2>
+            </div>
+            <span class="portal-step">02 <span>/ 02</span></span>
+          </div>
+          <div class="portal-results" id="compare-results">
+            <p class="portal-empty">Preencha as preferências do cliente para ver as recomendações.</p>
+          </div>
+          <nav class="portal-pagination" id="compare-pagination" aria-label="Paginação das recomendações"></nav>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="portal-dialog" id="hotel-details-dialog" aria-labelledby="hotel-details-title">
+    <button class="portal-dialog-close" id="hotel-details-close" type="button" aria-label="Fechar detalhes">×</button>
+    <div id="hotel-details-content">
+      <h2 id="hotel-details-title"></h2>
+    </div>
+  </dialog>
+</body>
+</html>

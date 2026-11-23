@@ -15,6 +15,10 @@ function enviarErroBanco(res, erro, contexto) {
         res.status(409).json({ mensagem: "Não é possível excluir este registro enquanto houver dados relacionados." });
         return;
     }
+    if (erro.code === "USER_TYPE_NOT_FOUND") {
+        res.status(500).json({ mensagem: erro.message });
+        return;
+    }
 
     res.status(500).json({ mensagem: "Houve um erro ao " + contexto + "." });
 }

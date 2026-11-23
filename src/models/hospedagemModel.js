@@ -1,4 +1,5 @@
 var database = require("../database/config");
+var pagination = require("../utils/pagination");
 
 var selectHospedagem = `
     SELECT h.id_hospedagem AS id, h.cnpj, h.tipo_hospedagem AS tipoHospedagem,
@@ -6,7 +7,6 @@ var selectHospedagem = `
            h.uni_habit AS unidadesHabitacionais, h.leitos,
            h.uni_habit_acess AS unidadesAcessiveis, h.leito_acess AS leitosAcessiveis,
            h.dt_abertura AS dataAbertura, h.website, h.porte,
-           h.validade_certificado AS validadeCertificado,
            (SELECT l.endereco FROM localizacao l
             WHERE l.fk_hospedagem = h.id_hospedagem
             ORDER BY l.id_localizacao LIMIT 1) AS endereco,
@@ -15,11 +15,15 @@ var selectHospedagem = `
             ORDER BY l.id_localizacao LIMIT 1) AS municipio,
            (SELECT l.uf FROM localizacao l
             WHERE l.fk_hospedagem = h.id_hospedagem
-            ORDER BY l.id_localizacao LIMIT 1) AS uf
+            ORDER BY l.id_localizacao LIMIT 1) AS uf,
+           (SELECT GROUP_CONCAT(i.idioma SEPARATOR ',')
+            FROM idiomas_hospedagem ih
+            JOIN idioma i ON i.id_idioma = ih.fk_idioma
+            WHERE ih.fk_hospedagem = h.id_hospedagem) AS idiomas
     FROM hospedagem h
 `;
 
-function listar(filtros) {
+function construirFiltros(filtros) {
     var condicoes = [];
     var valores = [];
 
@@ -33,16 +37,65 @@ function listar(filtros) {
         valores.push(busca, busca, busca);
     }
 
+    if (filtros.tipoHospedagem) {
+        condicoes.push("h.tipo_hospedagem = ?");
+        valores.push(filtros.tipoHospedagem);
+    }
+
     if (filtros.municipio) {
         condicoes.push(`EXISTS (SELECT 1 FROM localizacao l
                                 WHERE l.fk_hospedagem = h.id_hospedagem AND l.municipio LIKE ?)`);
         valores.push("%" + filtros.municipio + "%");
     }
 
-    var instrucaoSql = selectHospedagem +
-        (condicoes.length ? " WHERE " + condicoes.join(" AND ") : "") +
-        " ORDER BY h.nome_fantasia;";
-    return database.executar(instrucaoSql, valores);
+    return {
+        clausula: condicoes.length ? " WHERE " + condicoes.join(" AND ") : "",
+        valores: valores
+    };
+}
+
+function listarPaginado(filtros, page, pageSize) {
+    var filtro = construirFiltros(filtros);
+    var countSql = "SELECT COUNT(*) AS total FROM hospedagem h" + filtro.clausula + ";";
+
+    return database.executar(countSql, filtro.valores).then(function (countRows) {
+        var total = Number(countRows[0].total);
+        var metadados = pagination.response([], page, pageSize, total);
+        var offset = (metadados.pagination.page - 1) * pageSize;
+        var queryValues = filtro.valores.concat([pageSize, offset]);
+        var querySql = selectHospedagem + filtro.clausula +
+            " ORDER BY h.nome_fantasia, h.id_hospedagem LIMIT ? OFFSET ?;";
+
+        return database.executar(querySql, queryValues).then(function (items) {
+            return pagination.response(
+                items,
+                metadados.pagination.page,
+                pageSize,
+                total
+            );
+        });
+    });
+}
+
+function listarTipos() {
+    return database.executar(`
+        SELECT DISTINCT tipo_hospedagem AS tipoHospedagem
+        FROM hospedagem
+        WHERE tipo_hospedagem IS NOT NULL AND TRIM(tipo_hospedagem) <> ''
+        ORDER BY tipo_hospedagem;
+    `);
+}
+
+function listarLotePorId(ultimoId, limite) {
+    return database.executar(
+        selectHospedagem +
+        " WHERE h.id_hospedagem > ? ORDER BY h.id_hospedagem LIMIT ?;",
+        [ultimoId, limite]
+    );
+}
+
+function contar() {
+    return database.executar("SELECT COUNT(*) AS total FROM hospedagem;");
 }
 
 function buscarPorId(id) {
@@ -55,14 +108,14 @@ function criar(hospedagem) {
             INSERT INTO hospedagem
                 (cnpj, tipo_hospedagem, nome_fantasia, email_comercial,
                  uni_habit, leitos, uni_habit_acess, leito_acess,
-                 dt_abertura, website, porte, validade_certificado)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+                 dt_abertura, website, porte)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
         `, [
             hospedagem.cnpj, hospedagem.tipoHospedagem, hospedagem.nomeFantasia,
             hospedagem.emailComercial, hospedagem.unidadesHabitacionais,
             hospedagem.leitos, hospedagem.unidadesAcessiveis,
             hospedagem.leitosAcessiveis, hospedagem.dataAbertura,
-            hospedagem.website, hospedagem.porte, hospedagem.validadeCertificado
+            hospedagem.website, hospedagem.porte
         ]);
 
         await executar(
@@ -79,14 +132,14 @@ function atualizar(id, hospedagem) {
             UPDATE hospedagem
             SET cnpj = ?, tipo_hospedagem = ?, nome_fantasia = ?, email_comercial = ?,
                 uni_habit = ?, leitos = ?, uni_habit_acess = ?, leito_acess = ?,
-                dt_abertura = ?, website = ?, porte = ?, validade_certificado = ?
+                dt_abertura = ?, website = ?, porte = ?
             WHERE id_hospedagem = ?;
         `, [
             hospedagem.cnpj, hospedagem.tipoHospedagem, hospedagem.nomeFantasia,
             hospedagem.emailComercial, hospedagem.unidadesHabitacionais,
             hospedagem.leitos, hospedagem.unidadesAcessiveis,
             hospedagem.leitosAcessiveis, hospedagem.dataAbertura,
-            hospedagem.website, hospedagem.porte, hospedagem.validadeCertificado, id
+            hospedagem.website, hospedagem.porte, id
         ]);
 
         var localizacoes = await executar(
@@ -118,4 +171,13 @@ function excluir(id) {
     });
 }
 
-module.exports = { listar, buscarPorId, criar, atualizar, excluir };
+module.exports = {
+    listarPaginado,
+    listarTipos,
+    listarLotePorId,
+    contar,
+    buscarPorId,
+    criar,
+    atualizar,
+    excluir
+};
