@@ -20,8 +20,11 @@ var usuarioRouter = require("./src/routes/usuarios");
 var avisosRouter = require("./src/routes/avisos");
 var medidasRouter = require("./src/routes/medidas");
 var aquariosRouter = require("./src/routes/aquarios");
-var empresasRouter = require("./src/routes/empresas");
 var mailerRouter = require("./src/routes/mailer");
+var hospedagensRouter = require("./src/routes/hospedagens");
+var agenciasRouter = require("./src/routes/agencias");
+var administradoresRouter = require("./src/routes/administradores");
+var comparacoesRouter = require("./src/routes/comparacoes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -34,8 +37,11 @@ app.use("/usuarios", usuarioRouter);
 app.use("/avisos", avisosRouter);
 app.use("/medidas", medidasRouter);
 app.use("/aquarios", aquariosRouter);
-app.use("/empresas", empresasRouter);
 app.use("/mailer", mailerRouter);
+app.use("/hospedagens", hospedagensRouter);
+app.use("/agencias", agenciasRouter);
+app.use("/administradores", administradoresRouter);
+app.use("/comparacoes", comparacoesRouter);
 
 app.listen(PORTA_APP, function () {
     console.log(`

@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="pt-br">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TourWise | Gestão da agência</title>
+  <link rel="stylesheet" href="css/portal.css">
+  <script src="js/portal.js" defer></script>
+</head>
+<body data-role="gestor" data-page="gestor">
+  <header class="portal-top">
+    <a class="portal-logo" href="gestor.html"><span>Tour</span>Wise</a>
+    <div class="portal-user"><p>Gestor(a): <strong data-user-name></strong> · <span data-agency-name></span></p><button class="portal-button secondary" data-logout>Sair</button></div>
+  </header>
+  <main class="portal-wrap">
+    <div class="portal-heading">
+      <h1>Equipe da agência</h1>
+      <p>Cadastre e atualize os agentes vinculados à sua agência. Você só pode gerenciar a sua equipe.</p>
+    </div>
+    <div class="portal-kpis" id="manager-kpis" aria-live="polite"></div>
+    <section class="portal-panel">
+      <h2 id="agent-form-title">Cadastrar agente</h2>
+      <form class="portal-form" id="agent-form">
+        <input type="hidden" name="id">
+        <div class="portal-field"><label for="agent-name">Nome</label><input id="agent-name" name="nome" maxlength="45" required></div>
+        <div class="portal-field"><label for="agent-email">E-mail</label><input id="agent-email" name="email" type="email" maxlength="45" required></div>
+        <div class="portal-field"><label for="agent-password">Senha <span data-password-note>(obrigatória)</span></label><input id="agent-password" name="senha" type="password" maxlength="45"></div>
+        <button class="portal-button" type="submit">Salvar agente</button>
+        <button class="portal-button secondary" type="button" data-cancel-edit hidden>Cancelar edição</button>
+      </form>
+      <p class="portal-message" id="agent-message" role="status"></p>
+      <h2>Agentes vinculados</h2>
+      <div class="portal-list" id="agent-list"></div>
+      <nav class="portal-pagination" id="agent-pagination" aria-label="Paginação dos agentes"></nav>
+    </section>
+  </main>
+</body>
+</html>

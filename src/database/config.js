@@ -10,29 +10,93 @@ var mySqlConfig = {
 };
 
 function executar(instrucao, valores = []) {
-
     if (process.env.AMBIENTE_PROCESSO !== "producao" && process.env.AMBIENTE_PROCESSO !== "desenvolvimento") {
-        console.log("\nO AMBIENTE (produção OU desenvolvimento) NÃO FOI DEFINIDO EM .env OU dev.env OU app.js\n");
-        return Promise.reject("AMBIENTE NÃO CONFIGURADO EM .env");
+        return Promise.reject(new Error("AMBIENTE NÃO CONFIGURADO EM .env"));
     }
 
     return new Promise(function (resolve, reject) {
         var conexao = mysql.createConnection(mySqlConfig);
-        conexao.connect();
-        conexao.query(instrucao, valores, function (erro, resultados) {
-            conexao.end();
-            if (erro) {
-                return reject(erro);
+        conexao.connect(function (erroConexao) {
+            if (erroConexao) {
+                conexao.end();
+                reject(erroConexao);
+                return;
             }
-            console.log(resultados);
-            resolve(resultados);
+
+            conexao.query(instrucao, valores, function (erroConsulta, resultados) {
+                conexao.end();
+                if (erroConsulta) {
+                    reject(erroConsulta);
+                    return;
+                }
+                resolve(resultados);
+            });
         });
-        conexao.on('error', function (erro) {
-            return ("ERRO NO MySQL SERVER: ", erro.sqlMessage);
+    });
+}
+
+function transacao(operacao) {
+    if (process.env.AMBIENTE_PROCESSO !== "producao" && process.env.AMBIENTE_PROCESSO !== "desenvolvimento") {
+        return Promise.reject(new Error("AMBIENTE NÃO CONFIGURADO EM .env"));
+    }
+
+    return new Promise(function (resolve, reject) {
+        var conexao = mysql.createConnection(mySqlConfig);
+        conexao.connect(function (erroConexao) {
+            if (erroConexao) {
+                conexao.end();
+                reject(erroConexao);
+                return;
+            }
+
+            conexao.beginTransaction(function (erroTransacao) {
+                if (erroTransacao) {
+                    conexao.end();
+                    reject(erroTransacao);
+                    return;
+                }
+
+                function executarNaTransacao(instrucao, valores = []) {
+                    return new Promise(function (resolveConsulta, rejectConsulta) {
+                        conexao.query(instrucao, valores, function (erroConsulta, resultado) {
+                            if (erroConsulta) {
+                                rejectConsulta(erroConsulta);
+                                return;
+                            }
+                            resolveConsulta(resultado);
+                        });
+                    });
+                }
+
+                Promise.resolve()
+                    .then(function () {
+                        return operacao(executarNaTransacao);
+                    })
+                    .then(function (resultado) {
+                        conexao.commit(function (erroCommit) {
+                            if (erroCommit) {
+                                conexao.rollback(function () {
+                                    conexao.end();
+                                    reject(erroCommit);
+                                });
+                                return;
+                            }
+                            conexao.end();
+                            resolve(resultado);
+                        });
+                    })
+                    .catch(function (erro) {
+                        conexao.rollback(function () {
+                            conexao.end();
+                            reject(erro);
+                        });
+                    });
+            });
         });
     });
 }
 
 module.exports = {
-    executar
+    executar,
+    transacao
 };
