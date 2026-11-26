@@ -19,7 +19,15 @@ var selectHospedagem = `
            (SELECT GROUP_CONCAT(i.idioma SEPARATOR ',')
             FROM idiomas_hospedagem ih
             JOIN idioma i ON i.id_idioma = ih.fk_idioma
-            WHERE ih.fk_hospedagem = h.id_hospedagem) AS idiomas
+            WHERE ih.fk_hospedagem = h.id_hospedagem) AS idiomas,
+           (SELECT t.numero FROM telefone t
+            WHERE t.fk_hospedagem = h.id_hospedagem
+            ORDER BY t.id_telefone LIMIT 1) AS telefone,
+           (SELECT CONCAT_WS(' - ', c.codigo, c.descricao)
+            FROM cnaes_hospedagem ch
+            JOIN cnae c ON c.id_cnae = ch.fk_cnae
+            WHERE ch.fk_hospedagem = h.id_hospedagem
+            ORDER BY ch.fk_cnae LIMIT 1) AS cnaePrincipal
     FROM hospedagem h
 `;
 

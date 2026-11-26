@@ -35,62 +35,19 @@ function buscarPorId(id) {
 }
 
 function criar(agencia) {
-    return database.transacao(async function (query) {
-        var tipoIdResult = await query(
-            "SELECT id_tipo_usuario FROM tipo_usuario WHERE LOWER(TRIM(tipo_usuario)) = 'gestor' LIMIT 1;"
-        );
-        if (!tipoIdResult.length) {
-            var erro = new Error("Cadastre o tipo de usuário Gestor antes de criar agências.");
-            erro.code = "USER_TYPE_NOT_FOUND";
-            throw erro;
-        }
-
-        var empresa = await query(
-            "INSERT INTO empresa (nome, email) VALUES (?, ?);",
-            [agencia.nome, agencia.email]
-        );
-        await query(`
-            INSERT INTO usuario (nome, email, senha, fk_empresa, fk_tipo_usuario)
-            VALUES (?, ?, ?, ?, ?);
-        `, [
-            agencia.gestorNome || agencia.nome,
-            agencia.gestorEmail || agencia.email,
-            agencia.senha,
-            empresa.insertId,
-            tipoIdResult[0].id_tipo_usuario
-        ]);
-        return empresa.insertId;
+    return database.executar(
+        "INSERT INTO empresa (nome, email) VALUES (?, ?);",
+        [agencia.nome, agencia.email || null]
+    ).then(function (resultado) {
+        return resultado.insertId;
     });
 }
 
 function atualizar(id, agencia) {
-    return database.transacao(async function (query) {
-        var empresas = await query(
-            "SELECT id_empresa FROM empresa WHERE id_empresa = ? FOR UPDATE;",
-            [id]
-        );
-        if (!empresas.length) return { affectedRows: 0 };
-
-        await query("UPDATE empresa SET nome = ?, email = ? WHERE id_empresa = ?;", [
-            agencia.nome, agencia.email, id
-        ]);
-
-        var gestor = await query(`
-            SELECT u.cod_usuario
-            FROM usuario u
-            JOIN tipo_usuario t ON t.id_tipo_usuario = u.fk_tipo_usuario
-            WHERE u.fk_empresa = ? AND LOWER(TRIM(t.tipo_usuario)) = 'gestor'
-            ORDER BY u.cod_usuario LIMIT 1;
-        `, [id]);
-        if (gestor.length) {
-            await query(`
-                UPDATE usuario
-                SET email = ?, senha = COALESCE(?, senha)
-                WHERE cod_usuario = ?;
-            `, [agencia.gestorEmail || agencia.email, agencia.senha || null, gestor[0].cod_usuario]);
-        }
-        return { affectedRows: 1 };
-    });
+    return database.executar(
+        "UPDATE empresa SET nome = ?, email = ? WHERE id_empresa = ?;",
+        [agencia.nome, agencia.email || null, id]
+    );
 }
 
 function excluir(id) {
@@ -101,6 +58,7 @@ function excluir(id) {
         );
         if (empresas.length === 0) return { affectedRows: 0 };
 
+        await query("DELETE FROM notificacoes WHERE fk_empresa = ?;", [id]);
         var usuarios = await query("SELECT cod_usuario FROM usuario WHERE fk_empresa = ?;", [id]);
         for (var i = 0; i < usuarios.length; i++) {
             await query(`

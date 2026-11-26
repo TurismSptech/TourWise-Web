@@ -3,71 +3,113 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#2d180e">
   <title>TourWise | Administração</title>
   <link rel="stylesheet" href="css/portal.css">
   <script src="js/portal.js" defer></script>
 </head>
-<body data-role="adm" data-page="admin">
+<body class="agent-body" data-role="adm" data-page="admin">
   <header class="portal-top">
     <a class="portal-logo" href="administrador.html"><span>Tour</span>Wise</a>
-    <div class="portal-user"><p>Administrador: <strong data-user-name></strong></p><button class="portal-button secondary" data-logout>Sair</button></div>
+    <div class="portal-user"><p>Administrador: <strong data-user-name></strong></p><button class="portal-button secondary" data-logout type="button">Sair</button></div>
   </header>
-  <main class="portal-wrap">
-    <div class="portal-heading">
-      <h1>Painel administrativo</h1>
-      <p>Gerencie agências, acessos de Gestor, administradores e a base de hospedagens do TourWise.</p>
-    </div>
-    <div class="portal-kpis" id="admin-kpis" aria-live="polite"></div>
-    <section class="portal-panel" id="agencias">
-      <h2>Agências e acessos de Gestor</h2>
-      <form class="portal-form" id="agency-form">
-        <input type="hidden" name="id">
-        <div class="portal-field"><label for="agency-name">Nome da agência</label><input id="agency-name" name="nome" maxlength="45" required></div>
-        <div class="portal-field"><label for="agency-email">E-mail de acesso do Gestor</label><input id="agency-email" name="email" type="email" maxlength="45" required></div>
-        <div class="portal-field"><label for="agency-password">Senha <span data-password-note>(obrigatória)</span></label><input id="agency-password" name="senha" type="password" maxlength="45"></div>
-        <button class="portal-button" type="submit">Salvar agência</button>
-      </form>
-      <p class="portal-message" id="agency-message" role="status"></p>
-      <div class="portal-list" id="agency-list"></div>
-      <nav class="portal-pagination" id="agency-pagination" aria-label="Paginação das agências"></nav>
-    </section>
-    <section class="portal-panel" id="admins">
-      <h2>Administradores</h2>
-      <form class="portal-form" id="admin-form">
-        <input type="hidden" name="id">
-        <div class="portal-field"><label for="admin-name">Nome</label><input id="admin-name" name="nome" maxlength="45" required></div>
-        <div class="portal-field"><label for="admin-email">E-mail</label><input id="admin-email" name="email" type="email" maxlength="45" required></div>
-        <div class="portal-field"><label for="admin-password">Senha <span data-password-note>(obrigatória)</span></label><input id="admin-password" name="senha" type="password" maxlength="45"></div>
-        <button class="portal-button" type="submit">Salvar administrador</button>
-      </form>
-      <p class="portal-message" id="admin-message" role="status"></p>
-      <div class="portal-list" id="admin-list"></div>
-      <nav class="portal-pagination" id="admin-pagination" aria-label="Paginação dos administradores"></nav>
-    </section>
-    <section class="portal-panel" id="hotels">
-      <h2>Hospedagens</h2>
-      <form class="portal-form" id="hotel-form">
-        <input type="hidden" name="id">
-        <div class="portal-field"><label for="hotel-name">Nome do hotel</label><input id="hotel-name" name="nome_fantasia" maxlength="200" required></div>
-        <div class="portal-field"><label for="hotel-type">Tipo</label><input id="hotel-type" name="tipo_hospedagem" maxlength="70" required></div>
-        <div class="portal-field"><label for="hotel-city">Município</label><input id="hotel-city" name="municipio" maxlength="100" required></div>
-        <div class="portal-field"><label for="hotel-state">UF</label><input id="hotel-state" name="uf" maxlength="2" required></div>
-        <div class="portal-field"><label for="hotel-cnpj">CNPJ</label><input id="hotel-cnpj" name="cnpj" inputmode="numeric" maxlength="18"></div>
-        <div class="portal-field"><label for="hotel-email">E-mail comercial</label><input id="hotel-email" name="email_comercial" type="email" maxlength="100"></div>
-        <div class="portal-field"><label for="hotel-address">Endereço</label><input id="hotel-address" name="endereco" maxlength="300"></div>
-        <div class="portal-field"><label for="hotel-units">Unidades habitacionais</label><input id="hotel-units" name="uni_habit" type="number" min="0"></div>
-        <div class="portal-field"><label for="hotel-beds">Leitos</label><input id="hotel-beds" name="leitos" type="number" min="0"></div>
-        <div class="portal-field"><label for="hotel-accessible-units">Unidades acessíveis</label><input id="hotel-accessible-units" name="uni_habit_acess" type="number" min="0"></div>
-        <div class="portal-field"><label for="hotel-accessible">Leitos acessíveis</label><input id="hotel-accessible" name="leito_acess" type="number" min="0"></div>
-        <div class="portal-field"><label for="hotel-opened">Data de abertura (AAAA-MM-DD)</label><input id="hotel-opened" name="dt_abertura" maxlength="10" placeholder="2010-05-15"></div>
-        <div class="portal-field"><label for="hotel-website">Website</label><input id="hotel-website" name="website" maxlength="150"></div>
-        <div class="portal-field"><label for="hotel-size">Porte</label><input id="hotel-size" name="porte" maxlength="60"></div>
-        <button class="portal-button" type="submit">Salvar hospedagem</button>
-      </form>
-      <p class="portal-message" id="hotel-message" role="status"></p>
-      <div class="portal-list" id="hotel-list"></div>
-      <nav class="portal-pagination" id="hotel-pagination" aria-label="Paginação das hospedagens"></nav>
-    </section>
-  </main>
+  <div class="management-layout">
+    <aside class="management-sidebar" aria-label="Navegação administrativa">
+      <div class="agent-profile"><span class="agent-avatar" aria-hidden="true">TW</span><div><strong data-user-name></strong><span>Administrador</span></div></div>
+      <p class="agent-nav-label">GESTÃO</p>
+      <nav class="agent-nav">
+        <a href="#empresas" class="active" data-management-nav="empresas" aria-current="page"><span class="agent-nav-icon" aria-hidden="true">01</span>Empresas</a>
+        <a href="#gestores" data-management-nav="gestores"><span class="agent-nav-icon" aria-hidden="true">02</span>Gestores</a>
+        <a href="#administradores" data-management-nav="administradores"><span class="agent-nav-icon" aria-hidden="true">03</span>Administradores</a>
+      </nav>
+    </aside>
+    <main class="agent-main">
+      <section class="portal-wrap agent-view management-view" id="empresas" data-management-view="empresas">
+        <div class="portal-heading">
+          <p class="portal-eyebrow">ADMINISTRAÇÃO</p>
+          <h1>Empresas</h1>
+          <p>Cadastre e mantenha as empresas vinculadas à plataforma.</p>
+        </div>
+        <div class="portal-kpis" id="admin-kpis" aria-live="polite"></div>
+        <section class="portal-panel">
+          <div class="portal-section-heading">
+            <div><p class="portal-eyebrow">CADASTROS</p><h2>Empresas cadastradas</h2></div>
+            <button class="portal-button" type="button" data-open-dialog="agency-dialog">Nova empresa</button>
+          </div>
+          <p class="portal-message" id="agency-message" role="status"></p>
+          <div class="portal-list" id="agency-list"></div>
+          <nav class="portal-pagination" id="agency-pagination" aria-label="Paginação das empresas"></nav>
+        </section>
+      </section>
+      <section class="portal-wrap agent-view management-view" id="gestores" data-management-view="gestores" hidden>
+        <div class="portal-heading">
+          <p class="portal-eyebrow">ADMINISTRAÇÃO</p>
+          <h1>Gestores</h1>
+          <p>Cadastre gestores separadamente e associe cada acesso à sua empresa.</p>
+        </div>
+        <section class="portal-panel">
+          <div class="portal-section-heading">
+            <div><p class="portal-eyebrow">ACESSOS</p><h2>Gestores cadastrados</h2></div>
+            <button class="portal-button" type="button" data-open-dialog="manager-dialog">Novo gestor</button>
+          </div>
+          <p class="portal-message" id="manager-message" role="status"></p>
+          <div class="portal-list" id="manager-list"></div>
+          <nav class="portal-pagination" id="manager-pagination" aria-label="Paginação dos gestores"></nav>
+        </section>
+      </section>
+      <section class="portal-wrap agent-view management-view" id="administradores" data-management-view="administradores" hidden>
+        <div class="portal-heading">
+          <p class="portal-eyebrow">ADMINISTRAÇÃO</p>
+          <h1>Administradores</h1>
+          <p>Gerencie as contas administrativas do TourWise.</p>
+        </div>
+        <section class="portal-panel">
+          <div class="portal-section-heading">
+            <div><p class="portal-eyebrow">ACESSOS</p><h2>Administradores cadastrados</h2></div>
+            <button class="portal-button" type="button" data-open-dialog="admin-dialog">Novo administrador</button>
+          </div>
+          <p class="portal-message" id="admin-message" role="status"></p>
+          <div class="portal-list" id="admin-list"></div>
+          <nav class="portal-pagination" id="admin-pagination" aria-label="Paginação dos administradores"></nav>
+        </section>
+      </section>
+    </main>
+  </div>
+
+  <dialog class="portal-dialog management-dialog" id="agency-dialog" aria-labelledby="agency-dialog-title">
+    <button class="portal-dialog-close" type="button" data-close-dialog aria-label="Fechar">×</button>
+    <h2 id="agency-dialog-title" data-dialog-title="empresa">Cadastrar empresa</h2>
+    <form class="portal-form dialog-form" id="agency-form">
+      <input type="hidden" name="id">
+      <div class="portal-field"><label for="agency-name">Nome da empresa</label><input id="agency-name" name="nome" maxlength="45" required></div>
+      <div class="portal-field"><label for="agency-email">E-mail de contato <span>(opcional)</span></label><input id="agency-email" name="email" type="email" maxlength="45"></div>
+      <div class="dialog-actions"><button class="portal-button" type="submit">Salvar empresa</button><button class="portal-button secondary" type="button" data-cancel-edit>Cancelar</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="portal-dialog management-dialog" id="manager-dialog" aria-labelledby="manager-dialog-title">
+    <button class="portal-dialog-close" type="button" data-close-dialog aria-label="Fechar">×</button>
+    <h2 id="manager-dialog-title" data-dialog-title="gestor">Cadastrar gestor</h2>
+    <form class="portal-form dialog-form" id="manager-form">
+      <input type="hidden" name="id">
+      <div class="portal-field"><label for="manager-name">Nome</label><input id="manager-name" name="nome" maxlength="45" required></div>
+      <div class="portal-field"><label for="manager-email">E-mail</label><input id="manager-email" name="email" type="email" maxlength="45" required></div>
+      <div class="portal-field"><label for="manager-password">Senha <span data-password-note>(obrigatória)</span></label><input id="manager-password" name="senha" type="password" maxlength="45" required></div>
+      <div class="portal-field"><label for="manager-company">Empresa vinculada</label><select id="manager-company" name="empresaId" required><option value="">Selecione uma empresa</option></select></div>
+      <div class="dialog-actions"><button class="portal-button" type="submit">Salvar gestor</button><button class="portal-button secondary" type="button" data-cancel-edit>Cancelar</button></div>
+    </form>
+  </dialog>
+
+  <dialog class="portal-dialog management-dialog" id="admin-dialog" aria-labelledby="admin-dialog-title">
+    <button class="portal-dialog-close" type="button" data-close-dialog aria-label="Fechar">×</button>
+    <h2 id="admin-dialog-title" data-dialog-title="administrador">Cadastrar administrador</h2>
+    <form class="portal-form dialog-form" id="admin-form">
+      <input type="hidden" name="id">
+      <div class="portal-field"><label for="admin-name">Nome</label><input id="admin-name" name="nome" maxlength="45" required></div>
+      <div class="portal-field"><label for="admin-email">E-mail</label><input id="admin-email" name="email" type="email" maxlength="45" required></div>
+      <div class="portal-field"><label for="admin-password">Senha <span data-password-note>(obrigatória)</span></label><input id="admin-password" name="senha" type="password" maxlength="45" required></div>
+      <div class="dialog-actions"><button class="portal-button" type="submit">Salvar administrador</button><button class="portal-button secondary" type="button" data-cancel-edit>Cancelar</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

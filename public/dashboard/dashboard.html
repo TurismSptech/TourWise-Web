@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TourWise | Dashboard do Hotel</title>
+    <link rel="stylesheet" href="../css/portal.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <style>
@@ -397,6 +398,8 @@
         .cor-ideal { background-color: #4E7D56; }
         .cor-alta { background-color: #814D35; }
         .cor-moderada { background-color: #A37A5E; }
+        .cor-regular { background-color: #C67D3B; }
+        .cor-baixa { background-color: #A94438; }
 
         /* graficos */
         .graficos-container {
@@ -541,17 +544,242 @@
 
         .display-none { display: none; }
         .display-block { display: block; }
+        .dashboard-loading .janela { visibility: hidden; }
+        .dashboard-error .janela { display: none; }
+        .dashboard-load-error {
+            width: min(680px, calc(100% - 32px));
+            margin: 48px auto;
+            padding: 22px;
+            border: 1px solid #e2dad0;
+            border-left: 6px solid #63331C;
+            background: #ffffff;
+            color: #2D180E;
+            line-height: 1.6;
+        }
+        .status-badge.compat-low { background: #f7e7e5; color: #8a3027; }
+        .status-badge.compat-regular { background: #fff0df; color: #92551f; }
+        .status-badge.compat-moderate { background: #f0e7dc; color: #76553a; }
+        .status-badge.compat-high { background: #eee5d9; color: #63331C; }
+        .status-badge.compat-ideal { background: #e3f2e6; color: #2e6b38; }
+
+        body {
+            font-family: Barlow, Arial, sans-serif;
+            background: var(--paper);
+            color: var(--ink);
+        }
+
+        .portal-top {
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .janela {
+            display: grid;
+            grid-template-columns: 252px minmax(0, 1fr);
+            min-height: calc(100vh - 76px);
+        }
+
+        .header-left {
+            position: sticky;
+            top: var(--portal-top-height);
+            width: auto;
+            height: calc(100vh - 76px);
+            align-items: stretch;
+            justify-content: flex-start;
+            gap: 20px;
+            padding: 28px 18px 22px;
+            border-right: 1px solid var(--line);
+            background: #ffffff;
+            color: var(--ink);
+        }
+
+        .dash-header .agent-profile {
+            padding-bottom: 20px;
+        }
+
+        .resumo-pesquisa-lateral {
+            border: 1px solid var(--line);
+            border-left: 4px solid var(--accent);
+            border-radius: 12px;
+            background: var(--soft-paper);
+            color: var(--ink);
+        }
+
+        .resumo-pesquisa-lateral .resumo-titulo {
+            border-color: var(--line);
+            color: var(--brown);
+        }
+
+        .agent-sidebar-note {
+            margin-top: auto;
+        }
+
+        .dash {
+            width: min(1280px, calc(100% - 56px));
+            min-width: 0;
+            min-height: auto;
+            margin: 42px auto 64px;
+            padding: 0;
+            background: transparent;
+        }
+
+        .topo-dash,
+        .area-parametros-alerta,
+        .banner-hotel,
+        .card-kpi,
+        .graph-box,
+        .card-ficha {
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
+
+        .topo-dash {
+            border-color: var(--line);
+            background: #ffffff;
+        }
+
+        .topo-dash h2,
+        .nome-hotel,
+        .tituloGraficos,
+        .card-ficha h3 {
+            color: var(--ink);
+        }
+
+        .topo-dash p,
+        .local-hotel {
+            color: var(--muted);
+        }
+
+        .badge-fonte {
+            border-color: var(--line);
+            border-radius: 8px;
+            color: var(--brown);
+        }
+
+        .btn-chart {
+            border: 1px solid var(--brown);
+            border-radius: 8px;
+            padding: 10px 15px;
+            transition: transform .18s, background .18s, box-shadow .18s;
+        }
+
+        .btn-chart:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 5px 12px rgba(99, 51, 28, .16);
+        }
+
+        .btn-ativo {
+            border-color: var(--brown);
+            background: var(--brown);
+            color: #ffffff;
+        }
+
+        .btn-inativo {
+            background: #ffffff;
+            color: var(--brown);
+        }
+
+        .area-parametros-alerta,
+        .graph-box,
+        .card-ficha {
+            border-color: var(--line);
+            background: #ffffff;
+        }
+
+        .item-regua {
+            border-radius: 6px;
+        }
+
+        .banner-hotel {
+            border-left-color: var(--accent);
+        }
+
+        .card-kpi {
+            border-color: var(--line);
+        }
+
+        .card-kpi.destaque-kpi {
+            border-color: var(--accent);
+            background: var(--soft-paper);
+        }
+
+        .title-kpi h1 {
+            color: var(--brown);
+        }
+
+        .valor-kpi {
+            color: var(--ink);
+        }
+
+        .item-ficha {
+            border-radius: 9px;
+            background: var(--soft-paper);
+        }
+
+        .badge-idioma {
+            border-radius: 8px;
+            background: var(--soft-paper);
+            color: var(--brown);
+        }
+
+        .box-justificativa {
+            border-radius: 10px;
+            background: var(--soft-paper);
+        }
+
+        .btn-nav-white {
+            width: 100%;
+            border: 0;
+            padding: 0;
+        }
+
+        .btn-nav-white a {
+            display: block;
+            text-align: center;
+            text-decoration: none;
+        }
+
+        .btn-nav-white a h3 {
+            margin: 0;
+            color: inherit;
+        }
+
+        .btn-logout {
+            width: 100%;
+            border-radius: 8px;
+            background: var(--brown);
+        }
+
+        .dashboard-loading .portal-top,
+        .dashboard-loading .janela {
+            visibility: hidden;
+        }
+
+        .dashboard-error .portal-top,
+        .dashboard-error .janela {
+            display: none;
+        }
+
+        .dashboard-load-error {
+            border-radius: 14px;
+            box-shadow: var(--shadow);
+        }
 
         /* responsivo */
         @media (max-width: 1100px) {
+            .janela {
+                grid-template-columns: 240px minmax(0, 1fr);
+            }
+
             .header-left {
-                width: 240px;
+                width: auto;
             }
 
             .dash {
-                width: calc(100% - 240px);
-                margin-left: 240px;
-                padding: 24px;
+                width: min(1280px, calc(100% - 48px));
+                margin: 24px auto 50px;
+                padding: 0;
             }
 
             .cards-kpi {
@@ -605,69 +833,89 @@
                 grid-template-columns: 1fr;
             }
         }
+
+        @media (max-width: 800px) {
+            .janela {
+                grid-template-columns: 1fr;
+            }
+
+            .header-left {
+                position: static;
+                width: 100%;
+                height: auto;
+                padding: 18px;
+                border-right: 0;
+                border-bottom: 1px solid var(--line);
+            }
+
+            .dash {
+                width: min(100% - 30px, 680px);
+                margin: 28px auto 48px;
+            }
+        }
     </style>
 </head>
 
-<body onload="selecionarHotel(1)">
+<body class="dashboard-loading agent-body">
 
-    <div class="janela">
+    <header class="portal-top">
+        <a class="portal-logo" href="../agente.html"><span>Tour</span>Wise</a>
+        <div class="portal-user">
+            <p><strong id="b_usuario">Agente</strong><span id="nome-empresa">—</span></p>
+            <button class="portal-button secondary" id="dashboard-logout" type="button">Sair</button>
+        </div>
+    </header>
 
-        <div class="header-left dash-header">
-            <div class="titulo-logo">
-                <h1><span>Tour</span>Wise</h1>
+    <div class="janela agent-layout">
+        <aside class="header-left agent-sidebar dash-header" aria-label="Resumo da pesquisa">
+            <div class="agent-profile">
+                <span class="agent-avatar" aria-hidden="true">TW</span>
+                <div>
+                    <strong>Pesquisa da viagem</strong>
+                    <span>Resumo do cliente</span>
+                </div>
             </div>
 
-            <div class="hello">
-                <h3>Olá, <span id="b_usuario">Agente Mariana</span>!</h3>
-                <p class="agencia-sub">Agência: <strong>Horizonte Viagens</strong></p>
-            </div>
-
+            <p class="agent-nav-label">PESQUISA ATUAL</p>
             <div class="resumo-pesquisa-lateral">
-                <p class="resumo-titulo">Pesquisa Atual (#104)</p>
-                <p><strong>Cliente:</strong> Grupo Família Silva</p>
-                <p><strong>Destino:</strong> São Paulo - SP</p>
-                <p><strong>Tipo:</strong> Hotel</p>
-                <p><strong>Hóspedes:</strong> 12 pessoas</p>
-                <p><strong>Acessibilidade:</strong> Obrigatória</p>
-                <p><strong>Idioma:</strong> Inglês / Espanhol</p>
-            </div>
-
-            <div class="btn-nav">
-                <h3>Detalhes do Hotel</h3>
+                <p class="resumo-titulo">Pesquisa Atual (#<span id="pesquisa-id">—</span>)</p>
+                <p><strong>Cliente:</strong> <span id="resumo-cliente">—</span></p>
+                <p><strong>Destino:</strong> <span id="resumo-destino">—</span></p>
+                <p><strong>Tipo:</strong> <span id="resumo-tipo">—</span></p>
+                <p><strong>Hóspedes:</strong> <span id="resumo-hospedes">—</span></p>
+                <p><strong>Acessibilidade:</strong> <span id="resumo-acessibilidade">—</span></p>
+                <p><strong>Idioma:</strong> <span id="resumo-idioma">—</span></p>
             </div>
 
             <div class="btn-nav-white">
-                <a href="../index.html">
-                    <h3>Voltar para Home</h3>
+                <a class="portal-button secondary" href="../agente.html#geracao-recomendacoes">
+                    <h3>Voltar à geração</h3>
                 </a>
             </div>
+        </aside>
 
-            <div class="btn-logout" onclick="window.location.href='../login.html'">
-                <h3>Sair</h3>
-            </div>
-        </div>
+        <main class="dash agent-main">
 
-        <div class="dash">
-
-            <div class="topo-dash">
+            <div class="topo-dash portal-panel">
                 <div>
-                    <h2>Análise Individual do Meio de Hospedagem</h2>
-                    <p>Clique em uma das opções recomendadas abaixo para ver os indicadores do estabelecimento no Cadastur.</p>
+                    <p class="portal-eyebrow">ANÁLISE PERSONALIZADA</p>
+                    <h2>Comparativo das hospedagens recomendadas</h2>
+                    <p>Selecione uma recomendação para consultar os indicadores da hospedagem e sua compatibilidade com a pesquisa.</p>
                 </div>
                 <div class="badge-fonte">
-                    Fonte Oficial: <strong>Cadastur (2º Trim / 2026)</strong>
+                    Fonte: <strong>Cadastro de hospedagens TourWise</strong>
                 </div>
             </div>
 
             <div class="btns-dash" id="btnHoteis">
-                <button class="btn-chart btn-ativo" id="btnHotel1" onclick="selecionarHotel(1)">
-                    1º Lugar - Dublin Hotel (94%)
+                <button class="btn-chart btn-ativo" id="btnHotel1" type="button">
+                    1º Lugar
                 </button>
-                <button class="btn-chart btn-inativo" id="btnHotel2" onclick="selecionarHotel(2)">
-                    2º Lugar - Hotel San Juan (85%)
+                <button class="btn-chart btn-inativo" id="btnHotel2" type="button">
+                    2º Lugar
                 </button>
-                <button class="btn-chart btn-inativo" id="btnHotel3" onclick="selecionarHotel(3)">
-                    3º Lugar - Hotel Apolo (78%)
+                <button class="btn-chart btn-inativo" id="btnHotel3" type="button">
+                    3º Lugar
                 </button>
             </div>
 
@@ -957,123 +1205,10 @@
                 </div>
             </div>
 
-        </div>
+        </main>
     </div>
 
-    <script>
-        let graficosInicializados = false;
-
-        function selecionarHotel(idHotel) {
-            const ids = [1, 2, 3];
-            for (let i = 0; i < ids.length; i++) {
-                let atual = ids[i];
-                let painel = document.getElementById(`painelHotel${atual}`);
-                let botao = document.getElementById(`btnHotel${atual}`);
-
-                if (atual === idHotel) {
-                    painel.classList.remove("display-none");
-                    painel.classList.add("display-block");
-                    botao.classList.remove("btn-inativo");
-                    botao.classList.add("btn-ativo");
-                } else {
-                    painel.classList.remove("display-block");
-                    painel.classList.add("display-none");
-                    botao.classList.remove("btn-ativo");
-                    botao.classList.add("btn-inativo");
-                }
-            }
-
-            if (!graficosInicializados) {
-                renderizarTodosOsGraficos();
-                graficosInicializados = true;
-            }
-        }
-
-        function renderizarTodosOsGraficos() {
-            const corMarromMedio = '#63331C';
-            const corTerracota = '#814D35';
-            const corBegeEscuro = '#A37A5E';
-            const corVerdeAcessivel = '#4E7D56';
-
-            new Chart(document.getElementById('chartCapacidade1'), {
-                type: 'bar',
-                data: {
-                    labels: ['Unidades Habitacionais (Quartos)', 'Capacidade de Leitos'],
-                    datasets: [
-                        { label: 'Acessíveis (PcD)', data: [28, 72], backgroundColor: corVerdeAcessivel, borderRadius: 4 },
-                        { label: 'Padrão (Convencional)', data: [3, 8], backgroundColor: corBegeEscuro, borderRadius: 4 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
-            });
-
-            new Chart(document.getElementById('chartCompatibilidade1'), {
-                type: 'bar',
-                data: {
-                    labels: ['Localização (SP)', 'Tipo (Hotel)', 'Acessibilidade', 'Capacidade', 'Idiomas'],
-                    datasets: [{
-                        label: 'Pontuação Obtida (%)',
-                        data: [100, 100, 95, 85, 100],
-                        backgroundColor: [corMarromMedio, corMarromMedio, corVerdeAcessivel, corTerracota, corMarromMedio],
-                        borderRadius: 4
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 } } }
-            });
-
-            new Chart(document.getElementById('chartCapacidade2'), {
-                type: 'bar',
-                data: {
-                    labels: ['Unidades Habitacionais (Quartos)', 'Capacidade de Leitos'],
-                    datasets: [
-                        { label: 'Acessíveis (PcD)', data: [6, 12], backgroundColor: corVerdeAcessivel, borderRadius: 4 },
-                        { label: 'Padrão (Convencional)', data: [56, 102], backgroundColor: corBegeEscuro, borderRadius: 4 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
-            });
-
-            new Chart(document.getElementById('chartCompatibilidade2'), {
-                type: 'bar',
-                data: {
-                    labels: ['Localização (SP)', 'Tipo (Hotel)', 'Acessibilidade', 'Capacidade', 'Idiomas'],
-                    datasets: [{
-                        label: 'Pontuação Obtida (%)',
-                        data: [100, 100, 60, 100, 90],
-                        backgroundColor: [corMarromMedio, corMarromMedio, corTerracota, corVerdeAcessivel, corMarromMedio],
-                        borderRadius: 4
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 } } }
-            });
-
-            new Chart(document.getElementById('chartCapacidade3'), {
-                type: 'bar',
-                data: {
-                    labels: ['Unidades Habitacionais (Quartos)', 'Capacidade de Leitos'],
-                    datasets: [
-                        { label: 'Acessíveis (PcD)', data: [6, 6], backgroundColor: corVerdeAcessivel, borderRadius: 4 },
-                        { label: 'Padrão (Convencional)', data: [16, 20], backgroundColor: corBegeEscuro, borderRadius: 4 }
-                    ]
-                },
-                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } }
-            });
-
-            new Chart(document.getElementById('chartCompatibilidade3'), {
-                type: 'bar',
-                data: {
-                    labels: ['Localização (SP)', 'Tipo (Hotel)', 'Acessibilidade', 'Capacidade', 'Idiomas'],
-                    datasets: [{
-                        label: 'Pontuação Obtida (%)',
-                        data: [100, 100, 75, 70, 40],
-                        backgroundColor: [corMarromMedio, corMarromMedio, corVerdeAcessivel, corTerracota, corBegeEscuro],
-                        borderRadius: 4
-                    }]
-                },
-                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { beginAtZero: true, max: 100 } } }
-            });
-        }
-    </script>
+    <script src="../js/dashboard.js"></script>
 </body>
 
 </html>

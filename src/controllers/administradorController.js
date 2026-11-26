@@ -121,12 +121,15 @@ function resumo(req, res) {
         var totais = {
             administradores: 0,
             agencias: Number(resultados[1][0].total),
+            gestores: 0,
             agentes: 0,
             hospedagens: Number(resultados[2][0].total)
         };
         resultados[0].forEach(function (item) {
             if (item.cargo === "adm" || item.cargo === "administrador") {
                 totais.administradores += Number(item.total);
+            } else if (item.cargo === "gestor") {
+                totais.gestores += Number(item.total);
             } else if (item.cargo === "agente") {
                 totais.agentes += Number(item.total);
             }

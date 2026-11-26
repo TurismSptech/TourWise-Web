@@ -6,10 +6,11 @@ Agente (`Agente`).
 ## Banco de dados
 
 `src/database/script-tabelas.sql` cria o esquema baseado em `empresa`, `usuario` e
-`tipo_usuario`. O fluxo precisa de `usuario.nome` para identificar as pessoas e de
-`localizacao.fk_hospedagem` para relacionar a cidade ao hotel; ambos foram incluídos
-no script. `tipo_usuario.tipo_usuario` é único para permitir vínculos confiáveis.
-Em instalação nova, execute o script completo uma vez.
+`tipo_usuario`. O fluxo usa `usuario.nome`, `localizacao.fk_hospedagem` e os campos de
+pesquisa/recomendação definidos no script. Em instalação nova, execute o script
+completo uma vez. Em uma instalação existente, execute
+`src/database/migrations/20261126_historico_recomendacoes.sql` uma vez antes de
+iniciar a aplicação atualizada.
 
 Os registros de demonstração devem ser criados manualmente usando os tipos
 `adm`, `Gestor` e `Agente`. Um usuário Administrador tem `fk_empresa = NULL`; Gestor
@@ -25,13 +26,17 @@ os dados de nenhum banco.
 
 ## Fluxo e telas
 
-- **Administrador:** `public/administrador.html`; acompanha KPIs e gerencia empresas
-  (criando junto o acesso do Gestor), administradores e hospedagens.
+- **Administrador:** `public/administrador.html`; acompanha KPIs e gerencia empresas,
+  gestores e administradores em cadastros independentes. Hospedagens não são
+  cadastradas nem editadas pela área administrativa.
 - **Gestor:** `public/gestor.html`; lista, cadastra, atualiza e exclui Agentes da
-  própria empresa.
-- **Agente:** `public/agente.html`; navega e filtra o catálogo de hospedagens e gera
-  recomendações com base nos dados transitórios do cliente. É possível selecionar
-  uma hospedagem específica ou comparar com todas; os dados do cliente não são persistidos.
+  própria empresa, com modais dedicados para inclusão e edição.
+- **Agente:** `public/agente.html`; navega e filtra o catálogo, gera recomendações
+  e é redirecionado para `public/dashboard/dashboard.html`, que exibe os três hotéis
+  mais compatíveis usando as informações da comparação.
+  As pesquisas e recomendações ficam no histórico do agente, que permite filtrar
+  pelo cliente, favoritar hospedagens, editar e recalcular pesquisas, desativar
+  recomendações e consultá-las separadamente na seção de desativadas.
 
 A compatibilidade considera destino (35%), tipo de hospedagem (15%), capacidade
 (20%), acessibilidade (20%) e idioma (10%). Critérios opcionais ou sem informação
@@ -47,18 +52,18 @@ são mantidas em memória; reiniciar o servidor encerra as sessões.
 |---|---|
 | Público | `POST /usuarios/autenticar` |
 | Autenticado | `GET /usuarios/sessao`, `POST /usuarios/sair` |
-| Administrador | CRUD `/agencias`, `/administradores` e `/hospedagens` |
+| Administrador | CRUD `/empresas`, `/gestores` e `/administradores` |
 | Gestor | CRUD `/usuarios` (limitado à empresa da sessão) |
-| Agente | `GET /hospedagens`, `GET /hospedagens/:id`, `POST /comparacoes` |
+| Agente | `GET /hospedagens`, `GET /hospedagens/:id`, `POST /comparacoes`, CRUD do histórico `/recomendacoes` |
 
-Em `POST /comparacoes`, `hospedagemId` é opcional: sem ele, o sistema classifica
-todas as hospedagens; com ele, gera a recomendação para a hospedagem selecionada.
-Os dados do cliente são transitórios e não são gravados. A análise percorre os
-hotéis em lotes no servidor e retorna até dez recomendações por página.
+`POST /comparacoes` classifica as hospedagens em lotes, persiste os dados da pesquisa
+e salva apenas os três melhores resultados. O histórico e as ações de favorito,
+edição, desativação e reativação são limitados ao agente autenticado.
 
-Cada CRUD oferece `GET /`, `GET /:id`, `POST /`, `PUT /:id` e `DELETE /:id`.
+Cada CRUD de cadastro oferece `GET /`, `GET /:id`, `POST /`, `PUT /:id` e
+`DELETE /:id`.
 As rotas validam sessão e perfil no servidor. As listagens de hospedagens,
-agências, administradores e agentes usam `?page=1&limit=10`; o limite máximo por
+empresas, gestores, administradores, agentes e recomendações usam `?page=1&limit=10`; o limite máximo por
 requisição é dez registros. A resposta da listagem contém `items` e os metadados
 `pagination` (`page`, `pageSize`, `total` e `totalPages`). A busca do catálogo de
 hospedagens aplica filtros no banco antes de paginar.
