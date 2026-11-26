@@ -3,36 +3,54 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>TourWise | Gestão da agência</title>
+  <meta name="theme-color" content="#2d180e">
+  <title>TourWise | Gestão da empresa</title>
   <link rel="stylesheet" href="css/portal.css">
   <script src="js/portal.js" defer></script>
 </head>
-<body data-role="gestor" data-page="gestor">
+<body class="agent-body" data-role="gestor" data-page="gestor">
   <header class="portal-top">
     <a class="portal-logo" href="gestor.html"><span>Tour</span>Wise</a>
-    <div class="portal-user"><p>Gestor(a): <strong data-user-name></strong> · <span data-agency-name></span></p><button class="portal-button secondary" data-logout>Sair</button></div>
+    <div class="portal-user"><p>Gestor(a): <strong data-user-name></strong><span data-agency-name></span></p><button class="portal-button secondary" data-logout type="button">Sair</button></div>
   </header>
-  <main class="portal-wrap">
-    <div class="portal-heading">
-      <h1>Equipe da agência</h1>
-      <p>Cadastre e atualize os agentes vinculados à sua agência. Você só pode gerenciar a sua equipe.</p>
-    </div>
-    <div class="portal-kpis" id="manager-kpis" aria-live="polite"></div>
-    <section class="portal-panel">
-      <h2 id="agent-form-title">Cadastrar agente</h2>
-      <form class="portal-form" id="agent-form">
-        <input type="hidden" name="id">
-        <div class="portal-field"><label for="agent-name">Nome</label><input id="agent-name" name="nome" maxlength="45" required></div>
-        <div class="portal-field"><label for="agent-email">E-mail</label><input id="agent-email" name="email" type="email" maxlength="45" required></div>
-        <div class="portal-field"><label for="agent-password">Senha <span data-password-note>(obrigatória)</span></label><input id="agent-password" name="senha" type="password" maxlength="45"></div>
-        <button class="portal-button" type="submit">Salvar agente</button>
-        <button class="portal-button secondary" type="button" data-cancel-edit hidden>Cancelar edição</button>
-      </form>
-      <p class="portal-message" id="agent-message" role="status"></p>
-      <h2>Agentes vinculados</h2>
-      <div class="portal-list" id="agent-list"></div>
-      <nav class="portal-pagination" id="agent-pagination" aria-label="Paginação dos agentes"></nav>
-    </section>
-  </main>
+  <div class="management-layout">
+    <aside class="management-sidebar" aria-label="Navegação do gestor">
+      <div class="agent-profile"><span class="agent-avatar" aria-hidden="true">TW</span><div><strong data-user-name></strong><span>Gestor da empresa</span></div></div>
+      <p class="agent-nav-label">GESTÃO</p>
+      <nav class="agent-nav">
+        <a href="#equipe" class="active" data-management-nav="equipe" aria-current="page"><span class="agent-nav-icon" aria-hidden="true">01</span>Equipe</a>
+      </nav>
+    </aside>
+    <main class="agent-main">
+      <section class="portal-wrap agent-view management-view" id="equipe" data-management-view="equipe">
+        <div class="portal-heading">
+          <p class="portal-eyebrow">GESTÃO DA EMPRESA</p>
+          <h1>Equipe de agentes</h1>
+          <p>Cadastre e atualize os agentes vinculados à sua empresa.</p>
+        </div>
+        <div class="portal-kpis" id="manager-kpis" aria-live="polite"></div>
+        <section class="portal-panel">
+          <div class="portal-section-heading">
+            <div><p class="portal-eyebrow">ACESSOS</p><h2>Agentes vinculados</h2></div>
+            <button class="portal-button" type="button" data-open-dialog="agent-dialog">Novo agente</button>
+          </div>
+          <p class="portal-message" id="agent-message" role="status"></p>
+          <div class="portal-list" id="agent-list"></div>
+          <nav class="portal-pagination" id="agent-pagination" aria-label="Paginação dos agentes"></nav>
+        </section>
+      </section>
+    </main>
+  </div>
+  <dialog class="portal-dialog management-dialog" id="agent-dialog" aria-labelledby="agent-dialog-title">
+    <button class="portal-dialog-close" type="button" data-close-dialog aria-label="Fechar">×</button>
+    <h2 id="agent-dialog-title" data-dialog-title="agente">Cadastrar agente</h2>
+    <form class="portal-form dialog-form" id="agent-form">
+      <input type="hidden" name="id">
+      <div class="portal-field"><label for="agent-name">Nome</label><input id="agent-name" name="nome" maxlength="45" required></div>
+      <div class="portal-field"><label for="agent-email">E-mail</label><input id="agent-email" name="email" type="email" maxlength="45" required></div>
+      <div class="portal-field"><label for="agent-password">Senha <span data-password-note>(obrigatória)</span></label><input id="agent-password" name="senha" type="password" maxlength="45" required></div>
+      <div class="dialog-actions"><button class="portal-button" type="submit">Salvar agente</button><button class="portal-button secondary" type="button" data-cancel-edit>Cancelar</button></div>
+    </form>
+  </dialog>
 </body>
 </html>

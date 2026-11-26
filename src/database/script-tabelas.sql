@@ -62,12 +62,15 @@ CREATE TABLE notificacoes (
 
 CREATE TABLE pesquisa (
     id_pesquisa INT PRIMARY KEY AUTO_INCREMENT,
-    nome_cliente VARCHAR(45),
-    preferencia_lugar VARCHAR(45),
+    nome_cliente VARCHAR(100),
+    preferencia_lugar VARCHAR(100),
+    tipo_hospedagem_preferida VARCHAR(70),
     quantidade_pessoas INT,
     precisa_acessibilidade TINYINT,
     idioma VARCHAR(45),
     dt_viagem DATE,
+    ativo TINYINT NOT NULL DEFAULT 1,
+    data_criacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     fk_usuario INT,
     FOREIGN KEY (fk_usuario) REFERENCES usuario (cod_usuario)
 );
@@ -147,6 +150,7 @@ CREATE TABLE recomendacao (
     PRIMARY KEY (id_recomendacao, fk_hospedagem, fk_pesquisa),
     indice_compatibilidade CHAR(4),
     posicao_rank INT,
+    favorito TINYINT NOT NULL DEFAULT 0,
     FOREIGN KEY (fk_hospedagem) REFERENCES hospedagem (id_hospedagem),
     FOREIGN KEY (fk_pesquisa) REFERENCES pesquisa (id_pesquisa)
 );

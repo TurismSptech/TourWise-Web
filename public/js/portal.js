@@ -3,6 +3,8 @@
   var roleRoutes = { adm: "administrador.html", gestor: "gestor.html", agente: "agente.html" };
   var hotelCache = [];
   var hotelRequestId = 0;
+  var historyFilter = "ativas";
+  var historyRequestId = 0;
 
   function showMessage(elementId, message, isError) {
     var element = document.getElementById(elementId);
@@ -87,7 +89,14 @@
     if (passwordInput) passwordInput.required = false;
     var cancel = form.querySelector("[data-cancel-edit]");
     if (cancel) cancel.hidden = false;
-    form.scrollIntoView({ behavior: "smooth", block: "center" });
+    var dialog = form.closest("dialog");
+    if (dialog) {
+      var title = dialog.querySelector("[data-dialog-title]");
+      if (title) title.textContent = "Editar " + (title.dataset.dialogTitle || "cadastro");
+      dialog.showModal();
+    } else {
+      form.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
   }
 
   function renderCards(container, items, options) {
@@ -215,6 +224,8 @@
         });
         showMessage(messageId, id ? "Alterações salvas." : "Registro cadastrado.");
         clearForm(form);
+        var dialog = form.closest("dialog");
+        if (dialog) dialog.close();
         await refresh(currentPage);
       } catch (error) {
         showMessage(messageId, error.message, true);
@@ -222,7 +233,11 @@
     });
 
     var cancel = form.querySelector("[data-cancel-edit]");
-    if (cancel) cancel.addEventListener("click", function () { clearForm(form); });
+    if (cancel) cancel.addEventListener("click", function () {
+      clearForm(form);
+      var dialog = form.closest("dialog");
+      if (dialog) dialog.close();
+    });
     await refresh();
   }
 
@@ -231,10 +246,10 @@
     try {
       var totals = await api("/administradores/resumo");
       [
-        ["Agências / Gestores", totals.agencias],
+        ["Empresas", totals.agencias],
+        ["Gestores", totals.gestores || 0],
         ["Administradores", totals.administradores],
-        ["Agentes", totals.agentes],
-        ["Hospedagens", totals.hospedagens]
+        ["Agentes", totals.agentes]
       ].forEach(function (entry) {
         var card = createElement("div", "portal-kpi");
         card.appendChild(createElement("span", "", entry[0]));
@@ -245,32 +260,44 @@
       showMessage("agency-message", error.message, true);
     }
 
-    await loadCrud("/agencias", "agency-list", "agency-message", "agency-form",
+    await loadCrud("/empresas", "agency-list", "agency-message", "agency-form",
       ["nome", "email"], function (item) { return item.nome; },
-      function (item) { return item.email; },
+      function (item) { return item.email || "Sem e-mail de contato"; },
       function (item) { return [Number(item.totalAgentes) + " agente(s)"]; },
-      "Nenhuma agência cadastrada.");
+      "Nenhuma empresa cadastrada.", null, populateManagerCompanies);
+
+    await populateManagerCompanies();
+    await loadCrud("/gestores", "manager-list", "manager-message", "manager-form",
+      ["nome", "email", "empresaId"], function (item) { return item.nome; },
+      function (item) { return item.email; },
+      function (item) { return "Empresa: " + item.empresa; },
+      "Nenhum gestor cadastrado.");
 
     await loadCrud("/administradores", "admin-list", "admin-message", "admin-form",
       ["nome", "email"], function (item) { return item.nome; },
       function (item) { return item.email; }, null,
       "Nenhum administrador cadastrado.");
+  }
 
-    await loadCrud("/hospedagens", "hotel-list", "hotel-message", "hotel-form",
-      ["nome_fantasia", "tipo_hospedagem", "municipio", "uf", "cnpj", "endereco",
-        "email_comercial", "uni_habit", "leitos", "uni_habit_acess", "leito_acess",
-        "dt_abertura", "website", "porte"],
-      function (item) { return item.nomeFantasia; },
-      function (item) { return (item.tipoHospedagem || "Hospedagem") + " · " + (item.municipio || "") + "/" + (item.uf || ""); },
-      function (item) { return ["Leitos: " + (item.leitos || "não informado"), "Acessíveis: " + (item.leitosAcessiveis || 0)]; },
-      "Nenhuma hospedagem cadastrada.");
+  async function populateManagerCompanies() {
+    var select = document.getElementById("manager-company");
+    if (!select) return;
+    try {
+      var companies = await api("/gestores/empresas");
+      select.replaceChildren(new Option("Selecione uma empresa", ""));
+      companies.forEach(function (company) {
+        select.appendChild(new Option(company.nome, String(company.id)));
+      });
+    } catch (error) {
+      showMessage("manager-message", error.message, true);
+    }
   }
 
   async function loadManager() {
     await loadCrud("/usuarios", "agent-list", "agent-message", "agent-form",
       ["nome", "email"], function (item) { return item.nome; },
       function (item) { return item.email; },
-      function (item) { return "Agência: " + (item.agencia || sessionStorage.getItem("NOME_AGENCIA") || ""); },
+      function (item) { return "Empresa: " + (item.agencia || sessionStorage.getItem("NOME_AGENCIA") || ""); },
       "Ainda não há agentes nesta agência.",
       function (pagination) {
         var kpis = document.getElementById("manager-kpis");
@@ -313,12 +340,6 @@
       detailsButton.type = "button";
       detailsButton.addEventListener("click", function () { openHotelDetails(item.id); });
       actions.appendChild(detailsButton);
-      var recommendButton = createElement("button", "portal-button", "Gerar recomendação");
-      recommendButton.type = "button";
-      recommendButton.addEventListener("click", function () {
-        selectRecommendationHotel(item);
-      });
-      actions.appendChild(recommendButton);
       content.appendChild(actions);
       card.appendChild(content);
       container.appendChild(card);
@@ -341,6 +362,218 @@
     }
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
+
+  function setupManagementNavigation() {
+      document.querySelectorAll("[data-management-nav]").forEach(function (link) {
+        link.addEventListener("click", function (event) {
+          event.preventDefault();
+          document.querySelectorAll("[data-management-view]").forEach(function (view) {
+            view.hidden = view.dataset.managementView !== link.dataset.managementNav;
+          });
+          document.querySelectorAll("[data-management-nav]").forEach(function (item) {
+            var active = item === link;
+            item.classList.toggle("active", active);
+            if (active) item.setAttribute("aria-current", "page");
+            else item.removeAttribute("aria-current");
+          });
+          window.history.replaceState(null, "", link.getAttribute("href"));
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        });
+      });
+    }
+
+    function setupDialogs() {
+      document.querySelectorAll("[data-open-dialog]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          var dialog = document.getElementById(button.dataset.openDialog);
+          if (!dialog) return;
+          var form = dialog.querySelector("form");
+          if (form) clearForm(form);
+          var title = dialog.querySelector("[data-dialog-title]");
+          if (title) title.textContent = "Cadastrar " + title.dataset.dialogTitle;
+          dialog.showModal();
+        });
+      });
+      document.querySelectorAll("[data-close-dialog]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          button.closest("dialog").close();
+        });
+      });
+    }
+
+    function setupHistory() {
+      var search = document.getElementById("history-client-search");
+      if (!search) return;
+      document.querySelectorAll("[data-history-filter]").forEach(function (button) {
+        button.addEventListener("click", function () {
+          historyFilter = button.dataset.historyFilter;
+          document.querySelectorAll("[data-history-filter]").forEach(function (item) {
+            item.classList.toggle("active", item === button);
+          });
+          loadHistory(1);
+        });
+      });
+      var timer;
+      search.addEventListener("input", function () {
+        window.clearTimeout(timer);
+        timer = window.setTimeout(function () { loadHistory(1); }, 250);
+      });
+      var form = document.getElementById("history-edit-form");
+      form.addEventListener("submit", async function (event) {
+        event.preventDefault();
+        var values = formValues(form);
+        var id = values.id;
+        delete values.id;
+        values.quantidadePessoas = Number(values.quantidadePessoas);
+        values.precisaAcessibilidade = values.precisaAcessibilidade === "true";
+        try {
+          await api("/recomendacoes/" + id, { method: "PUT", body: values });
+          document.getElementById("history-edit-dialog").close();
+          showMessage("history-message", "Pesquisa atualizada e recomendações recalculadas.");
+          await loadHistory();
+        } catch (error) {
+          showMessage("history-message", error.message, true);
+        }
+      });
+      var cancel = form.querySelector("[data-cancel-edit]");
+      cancel.addEventListener("click", function () {
+        clearForm(form);
+        document.getElementById("history-edit-dialog").close();
+      });
+    }
+
+    async function openHistoryEdit(id) {
+      try {
+        var result = await api("/recomendacoes/" + id);
+        var form = document.getElementById("history-edit-form");
+        var pesquisa = result.pesquisa;
+        form.elements.id.value = pesquisa.id;
+        form.elements.nomeCliente.value = pesquisa.nomeCliente || "";
+        form.elements.destino.value = pesquisa.destino || "";
+        form.elements.tipoHospedagem.value = pesquisa.tipoHospedagem || "";
+        form.elements.quantidadePessoas.value = pesquisa.quantidadePessoas;
+        form.elements.precisaAcessibilidade.value = Number(pesquisa.precisaAcessibilidade) ? "true" : "false";
+        form.elements.idioma.value = pesquisa.idioma || "";
+        document.getElementById("history-edit-dialog").showModal();
+      } catch (error) {
+        showMessage("history-message", error.message, true);
+      }
+    }
+
+    async function loadHistory(page) {
+      var list = document.getElementById("history-list");
+      if (!list) return;
+      var requestId = ++historyRequestId;
+      var params = new URLSearchParams({
+        page: String(page || 1),
+        limit: "10",
+        status: historyFilter === "desativadas" ? "desativadas" : "ativas"
+      });
+      var name = document.getElementById("history-client-search").value.trim();
+      if (name) params.set("nomeCliente", name);
+      if (historyFilter === "favoritas") params.set("favoritas", "true");
+      try {
+        var result = await api("/recomendacoes?" + params.toString());
+        if (requestId !== historyRequestId) return;
+        renderHistory(result.items);
+        renderPagination("history-pagination", result.pagination, loadHistory);
+      } catch (error) {
+        if (requestId === historyRequestId) showMessage("history-message", error.message, true);
+      }
+    }
+
+    function renderHistory(items) {
+      var container = document.getElementById("history-list");
+      container.replaceChildren();
+      if (!items.length) {
+        container.appendChild(createElement("p", "portal-empty", "Nenhuma recomendação encontrada nesta seção."));
+        return;
+      }
+
+      var pesquisas = new Map();
+      items.forEach(function (item) {
+        var key = String(item.pesquisaId);
+        if (!pesquisas.has(key)) pesquisas.set(key, []);
+        pesquisas.get(key).push(item);
+      });
+      pesquisas.forEach(function (recomendacoes, pesquisaId) {
+        var pesquisa = recomendacoes[0];
+        var card = createElement("article", "portal-card history-card");
+        card.appendChild(createElement("p", "portal-eyebrow",
+          pesquisa.nomeCliente || "Cliente sem nome"));
+        card.appendChild(createElement("h3", "", pesquisa.destino));
+        card.appendChild(createElement("p", "", pesquisa.quantidadePessoas + " viajante(s)" +
+          (pesquisa.tipoHospedagem ? " · " + pesquisa.tipoHospedagem : "")));
+
+        var hotels = createElement("div", "history-recommendations");
+        recomendacoes.forEach(function (item) {
+          var hotel = createElement("div", "history-hotel-row");
+          var hotelInfo = createElement("div");
+          hotelInfo.appendChild(createElement("strong", "", item.hospedagem));
+          hotelInfo.appendChild(createElement("span", "", [
+            item.hospedagemTipo,
+            item.municipio,
+            item.uf
+          ].filter(Boolean).join(" · ")));
+          hotel.appendChild(hotelInfo);
+          hotel.appendChild(createElement("strong", "history-score", item.compatibilidade + "%"));
+          var favorite = createElement("button", "portal-button secondary small",
+            Number(item.favorito) ? "★ Favorita" : "☆ Favoritar");
+          favorite.type = "button";
+          favorite.setAttribute("aria-pressed", Number(item.favorito) ? "true" : "false");
+          favorite.addEventListener("click", async function () {
+            try {
+              await api("/recomendacoes/" + item.recomendacaoId + "/favorito", {
+                method: "PATCH",
+                body: { favorito: !Number(item.favorito) }
+              });
+              await loadHistory();
+            } catch (error) {
+              showMessage("history-message", error.message, true);
+            }
+          });
+          hotel.appendChild(favorite);
+          hotels.appendChild(hotel);
+        });
+        card.appendChild(hotels);
+
+        var actions = createElement("div", "portal-actions");
+        var dashboard = createElement("button", "portal-button secondary small", "Abrir dashboard");
+        dashboard.type = "button";
+        dashboard.addEventListener("click", function () {
+          window.location.href = "/dashboard/dashboard.html?id=" +
+            encodeURIComponent(pesquisaId) + "&origem=historico";
+        });
+        actions.appendChild(dashboard);
+        var edit = createElement("button", "portal-button secondary small", "Editar pesquisa");
+        edit.type = "button";
+        edit.addEventListener("click", function () { openHistoryEdit(pesquisaId); });
+        actions.appendChild(edit);
+        var active = historyFilter !== "desativadas";
+        var toggle = createElement("button", "portal-button " + (active ? "danger" : "secondary") + " small",
+          active ? "Desativar recomendação" : "Reativar recomendação");
+        toggle.type = "button";
+        toggle.addEventListener("click", async function () {
+          var confirmText = active
+            ? "Desativar esta recomendação? Ela sairá do histórico ativo."
+            : "Reativar esta recomendação?";
+          if (!window.confirm(confirmText)) return;
+          try {
+            await api("/recomendacoes/" + pesquisaId + "/status", {
+              method: "PATCH",
+              body: { ativo: !active }
+            });
+            showMessage("history-message", active ? "Recomendação desativada." : "Recomendação reativada.");
+            await loadHistory();
+          } catch (error) {
+            showMessage("history-message", error.message, true);
+          }
+        });
+        actions.appendChild(toggle);
+        card.appendChild(actions);
+        container.appendChild(card);
+      });
+    }
 
   function renderHotelDetails(hotel) {
     var content = document.getElementById("hotel-details-content");
@@ -395,21 +628,6 @@
         select.appendChild(option);
       });
     });
-  }
-
-  function selectRecommendationHotel(hotel) {
-    var select = document.getElementById("recommendation-hotel");
-    var option = Array.from(select.options).find(function (item) {
-      return item.value === String(hotel.id);
-    });
-    if (!option) {
-      option = document.createElement("option");
-      option.value = String(hotel.id);
-      option.textContent = hotel.nomeFantasia;
-      select.appendChild(option);
-    }
-    select.value = String(hotel.id);
-    showAgentView("geracao-recomendacoes");
   }
 
   async function loadHotels(page) {
@@ -472,31 +690,31 @@
       link.addEventListener("click", function (event) {
         event.preventDefault();
         showAgentView(link.dataset.agentNav);
+        if (link.dataset.agentNav === "historico-recomendacoes") loadHistory(1);
       });
     });
     showAgentView(window.location.hash === "#geracao-recomendacoes"
-      ? "geracao-recomendacoes" : "hospedagens");
+      ? "geracao-recomendacoes"
+      : window.location.hash === "#historico-recomendacoes"
+        ? "historico-recomendacoes" : "hospedagens");
 
     document.getElementById("hotel-details-close").addEventListener("click", function () {
       document.getElementById("hotel-details-dialog").close();
     });
 
     var recommendationInput = null;
-    async function generateRecommendations(values, page) {
-      var request = Object.assign({}, values, { pagina: page || 1 });
+    async function generateRecommendations(values) {
       try {
-        var result = await api("/comparacoes", { method: "POST", body: request });
-        var total = result.paginacao ? result.paginacao.total : result.resultados.length;
-        var client = result.cliente.nome ? " para " + result.cliente.nome : "";
-        showMessage("compare-message", total
-          ? total + " recomendação(ões) gerada(s)" + client + ". Os dados do cliente não foram salvos."
-          : "Não há hospedagens cadastradas para gerar recomendações.");
-        renderComparison(result.resultados);
-        if (result.paginacao) {
-          renderPagination("compare-pagination", result.paginacao, function (nextPage) {
-            generateRecommendations(recommendationInput, nextPage);
-          });
+        var result = await api("/comparacoes", { method: "POST", body: values });
+        if (!result.id || !Array.isArray(result.resultados) || !result.resultados.length) {
+          throw new Error("Não há hospedagens disponíveis para montar o relatório.");
         }
+        sessionStorage.setItem("TOURWISE_DASHBOARD_RESULT", JSON.stringify({
+          id: result.id,
+          cliente: result.cliente,
+          resultados: result.resultados
+        }));
+        window.location.href = "/dashboard/dashboard.html?id=" + encodeURIComponent(result.id);
       } catch (error) {
         showMessage("compare-message", error.message, true);
       }
@@ -507,59 +725,12 @@
       recommendationInput = formValues(event.currentTarget);
       recommendationInput.quantidadePessoas = Number(recommendationInput.quantidadePessoas);
       recommendationInput.precisaAcessibilidade = recommendationInput.precisaAcessibilidade === "true";
-      if (!recommendationInput.hospedagemId) delete recommendationInput.hospedagemId;
-      await generateRecommendations(recommendationInput, 1);
+      await generateRecommendations(recommendationInput);
     });
 
     await loadHotels(1);
-  }
-
-  function renderComparison(results) {
-    var container = document.getElementById("compare-results");
-    container.replaceChildren();
-    if (!results.length) {
-      container.appendChild(createElement("p", "portal-empty", "Preencha os dados do cliente para ver as recomendações."));
-      return;
-    }
-    results.forEach(function (result, index) {
-      var hotel = result.hospedagem;
-      var card = createElement("article", "portal-result");
-      var top = createElement("div", "portal-result-top");
-      var heading = createElement("div");
-      heading.appendChild(createElement("p", "portal-eyebrow", index === 0 ? "Melhor correspondência" : "Recomendação " + (index + 1)));
-      heading.appendChild(createElement("h3", "", hotel.nomeFantasia));
-      heading.appendChild(createElement("p", "", (hotel.tipoHospedagem || "Hospedagem") + " · " + (hotel.municipio || "") + "/" + (hotel.uf || "")));
-      top.appendChild(heading);
-      var chart = createElement("div", "portal-donut");
-      chart.style.setProperty("--score", result.compatibilidade + "%");
-      chart.setAttribute("role", "img");
-      chart.setAttribute("aria-label", result.compatibilidade + "% de compatibilidade");
-      chart.appendChild(createElement("strong", "", result.compatibilidade + "%"));
-      top.appendChild(chart);
-      card.appendChild(top);
-
-      var labels = {
-        destino: "Destino",
-        tipo: "Tipo",
-        capacidade: "Capacidade",
-        acessibilidade: "Acessibilidade",
-        idioma: "Idioma"
-      };
-      var criteria = createElement("div", "portal-criteria");
-      Object.keys(labels).forEach(function (key) {
-        var matched = result.criterios[key];
-        if (matched === null) return;
-        var criterion = createElement("span", matched ? "matched" : "missed",
-          (matched ? "Atende" : "Não atende") + " · " + labels[key]);
-        criteria.appendChild(criterion);
-      });
-      card.appendChild(criteria);
-      var detailButton = createElement("button", "portal-button secondary small", "Ver hospedagem");
-      detailButton.type = "button";
-      detailButton.addEventListener("click", function () { openHotelDetails(hotel.id); });
-      card.appendChild(detailButton);
-      container.appendChild(card);
-    });
+    loadHistory();
+    setupHistory();
   }
 
   async function initialize() {
@@ -591,7 +762,11 @@
         });
       });
 
-      if (document.body.dataset.page === "admin") await loadAdmin();
+      setupDialogs();
+      if (document.body.dataset.page === "admin") {
+        setupManagementNavigation();
+        await loadAdmin();
+      }
       if (document.body.dataset.page === "gestor") await loadManager();
       if (document.body.dataset.page === "agente") await loadAgent();
     } catch (error) {

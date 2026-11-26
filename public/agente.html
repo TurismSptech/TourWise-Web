@@ -36,19 +36,19 @@
           <span class="agent-nav-icon" aria-hidden="true">02</span>
           Geração de recomendações
         </a>
+        <a href="#historico-recomendacoes" data-agent-nav="historico-recomendacoes">
+          <span class="agent-nav-icon" aria-hidden="true">03</span>
+          Histórico
+        </a>
       </nav>
-      <div class="agent-sidebar-note">
-        <span>TOURWISE</span>
-        <p>Encontre hospedagens que combinam com cada viajante.</p>
-      </div>
     </aside>
 
     <main class="agent-main">
       <section class="portal-wrap agent-view" id="hospedagens" data-agent-view="hospedagens">
         <div class="portal-heading">
           <p class="portal-eyebrow">EXPLORE A REDE TOURWISE</p>
-          <h1>Encontre sua próxima hospedagem</h1>
-          <p>Pesquise, descubra detalhes e encontre a opção certa para o seu cliente.</p>
+          <h1 style="font-size: 28px;">Encontre sua próxima hospedagem</h1>
+          <p style="font-size: 14px; line-height: 1.5;">Pesquise, descubra detalhes e encontre a opção certa para o seu cliente.</p>
         </div>
         <section class="portal-panel portal-discovery">
           <div class="portal-search-row">
@@ -88,8 +88,8 @@
         data-agent-view="geracao-recomendacoes" hidden>
         <div class="portal-heading">
           <p class="portal-eyebrow">RECOMENDAÇÃO PERSONALIZADA</p>
-          <h1>Geração de recomendações</h1>
-          <p>Conte o que seu cliente procura e descubra as hospedagens mais compatíveis.</p>
+          <h1 style="font-size: 28px;">Geração de recomendações</h1>
+          <p style="font-size: 14px; line-height: 1.5;">Conte o que seu cliente procura e descubra as hospedagens mais compatíveis.</p>
         </div>
         <section class="portal-panel recommendation-panel">
           <div class="portal-section-heading">
@@ -97,9 +97,8 @@
               <p class="portal-eyebrow">PERFIL DO VIAJANTE</p>
               <h2>Preferências do cliente</h2>
             </div>
-            <span class="portal-step">01 <span>/ 02</span></span>
           </div>
-          <p class="portal-note">As informações do cliente são usadas somente para gerar estas recomendações e não são salvas.</p>
+          <p class="portal-note">Os dados da pesquisa e as recomendações ficam salvos no histórico da sua conta.</p>
           <form class="portal-form recommendation-form" id="compare-form">
             <div class="portal-field">
               <label for="client-name">Nome do cliente <span>(opcional)</span></label>
@@ -108,12 +107,6 @@
             <div class="portal-field">
               <label for="client-destination">Destino</label>
               <input id="client-destination" name="destino" maxlength="100" placeholder="Cidade desejada" required>
-            </div>
-            <div class="portal-field">
-              <label for="recommendation-hotel">Hospedagem</label>
-              <select id="recommendation-hotel" name="hospedagemId">
-                <option value="">Recomendar entre todas</option>
-              </select>
             </div>
             <div class="portal-field">
               <label for="client-type">Tipo de hospedagem <span>(opcional)</span></label>
@@ -145,18 +138,30 @@
           <p class="portal-message" id="compare-message" role="status"></p>
         </section>
 
-        <section class="portal-panel recommendation-report" aria-labelledby="recommendation-report-title">
-          <div class="portal-section-heading">
-            <div>
-              <p class="portal-eyebrow">RESULTADO DA ANÁLISE</p>
-              <h2 id="recommendation-report-title">Relatório de compatibilidade</h2>
+      </section>
+
+      <section class="portal-wrap agent-view" id="historico-recomendacoes"
+        data-agent-view="historico-recomendacoes" hidden>
+        <div class="portal-heading">
+          <p class="portal-eyebrow">RECOMENDAÇÕES SALVAS</p>
+          <h1>Histórico de recomendações</h1>
+          <p>Consulte, favorite, atualize ou desative as pesquisas realizadas.</p>
+        </div>
+        <section class="portal-panel">
+          <div class="portal-search-row history-toolbar">
+            <label class="portal-search-box" for="history-client-search">
+              <span aria-hidden="true">⌕</span>
+              <input id="history-client-search" type="search" placeholder="Filtrar pelo nome do cliente" autocomplete="off">
+            </label>
+            <div class="history-filters" role="group" aria-label="Filtrar recomendações">
+              <button class="portal-button secondary active" type="button" data-history-filter="ativas">Ativas</button>
+              <button class="portal-button secondary" type="button" data-history-filter="favoritas">Favoritas</button>
+              <button class="portal-button secondary" type="button" data-history-filter="desativadas">Desativadas</button>
             </div>
-            <span class="portal-step">02 <span>/ 02</span></span>
           </div>
-          <div class="portal-results" id="compare-results">
-            <p class="portal-empty">Preencha as preferências do cliente para ver as recomendações.</p>
-          </div>
-          <nav class="portal-pagination" id="compare-pagination" aria-label="Paginação das recomendações"></nav>
+          <p class="portal-message" id="history-message" role="status"></p>
+          <div class="portal-list history-list" id="history-list"></div>
+          <nav class="portal-pagination" id="history-pagination" aria-label="Paginação do histórico"></nav>
         </section>
       </section>
     </main>
@@ -167,6 +172,21 @@
     <div id="hotel-details-content">
       <h2 id="hotel-details-title"></h2>
     </div>
+  </dialog>
+
+  <dialog class="portal-dialog management-dialog" id="history-edit-dialog" aria-labelledby="history-edit-title">
+    <button class="portal-dialog-close" type="button" data-close-dialog aria-label="Fechar">×</button>
+    <h2 id="history-edit-title">Editar pesquisa</h2>
+    <form class="portal-form dialog-form" id="history-edit-form">
+      <input type="hidden" name="id">
+      <div class="portal-field"><label for="history-client-name">Nome do cliente <span>(opcional)</span></label><input id="history-client-name" name="nomeCliente" maxlength="100"></div>
+      <div class="portal-field"><label for="history-destination">Destino</label><input id="history-destination" name="destino" maxlength="100" required></div>
+      <div class="portal-field"><label for="history-type">Tipo de hospedagem <span>(opcional)</span></label><input id="history-type" name="tipoHospedagem" maxlength="70"></div>
+      <div class="portal-field"><label for="history-people">Quantidade de pessoas</label><input id="history-people" name="quantidadePessoas" type="number" min="1" required></div>
+      <div class="portal-field"><label for="history-accessibility">Precisa de acessibilidade?</label><select id="history-accessibility" name="precisaAcessibilidade" required><option value="">Selecione</option><option value="true">Sim</option><option value="false">Não</option></select></div>
+      <div class="portal-field"><label for="history-language">Idioma <span>(opcional)</span></label><input id="history-language" name="idioma" maxlength="45"></div>
+      <div class="dialog-actions"><button class="portal-button" type="submit">Atualizar pesquisa</button><button class="portal-button secondary" type="button" data-cancel-edit>Cancelar</button></div>
+    </form>
   </dialog>
 </body>
 </html>

@@ -25,6 +25,8 @@ var hospedagensRouter = require("./src/routes/hospedagens");
 var agenciasRouter = require("./src/routes/agencias");
 var administradoresRouter = require("./src/routes/administradores");
 var comparacoesRouter = require("./src/routes/comparacoes");
+var gestoresRouter = require("./src/routes/gestores");
+var recomendacoesRouter = require("./src/routes/recomendacoes");
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
@@ -40,8 +42,11 @@ app.use("/aquarios", aquariosRouter);
 app.use("/mailer", mailerRouter);
 app.use("/hospedagens", hospedagensRouter);
 app.use("/agencias", agenciasRouter);
+app.use("/empresas", agenciasRouter);
 app.use("/administradores", administradoresRouter);
 app.use("/comparacoes", comparacoesRouter);
+app.use("/gestores", gestoresRouter);
+app.use("/recomendacoes", recomendacoesRouter);
 
 app.listen(PORTA_APP, function () {
     console.log(`
